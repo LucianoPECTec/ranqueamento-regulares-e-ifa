@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Monitoramento Escolar — URE São José do Rio Preto</title>
+  <meta name="description" content="Painel interno de acompanhamento do desempenho multissistema, presença escolar e IFA das escolas da URE São José do Rio Preto.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+  <header class="topbar">
+    <section class="container identidade">
+      <p class="topbar-tag">Unidade Regional de Ensino</p>
+      <h1>São José do Rio Preto</h1>
+      <p class="topbar-subtitle">
+        Monitoramento Escolar — Desempenho Multissistema e IFA
+      </p>
+
+      <aside class="periodo">
+        <h2 class="periodo-titulo">Período do levantamento</h2>
+        <p><strong>1ª semana até a semana 37</strong></p>
+        <p class="periodo-detalle">Projeção de IFA: semanas 38 a 42</p>
+      </aside>
+    </section>
+
+    <nav class="navegacao" aria-label="Navegação principal">
+      <ul class="container menu">
+        <li><button type="button" class="menu-botao ativo" data-view="geral">Visão geral</button></li>
+        <li><button type="button" class="menu-botao" data-view="escolas">Escolas</button></li>
+        <li><button type="button" class="menu-botao" data-view="plataformas">Plataformas</button></li>
+        <li><button type="button" class="menu-botao" data-view="ifa">Aluno Presente / IFA</button></li>
+        <li><button type="button" class="menu-botao" data-view="sobre">Sobre os dados</button></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="container">
+
+    <aside class="aviso" aria-label="Aviso institucional">
+      <p>
+        <strong>Uso interno da URE São José do Rio Preto.</strong>
+        Este painel organiza informações para apoio à gestão, ao acompanhamento pedagógico e ao planejamento das escolas.
+      </p>
+      <p>
+        Levantamento realizado a partir dos dados da <strong>1ª semana até a semana 37</strong>.
+        As projeções de IFA consideram as <strong>semanas 38 a 42</strong>, com encerramento previsto na segunda semana de novembro.
+      </p>
+    </aside>
+
+    <!-- ===================== -->
+    <!-- VISÃO GERAL           -->
+    <!-- ===================== -->
+    <section id="view-geral" class="visao ativa" aria-labelledby="titulo-geral">
+      <h2 id="titulo-geral">Visão geral</h2>
+      <p class="descricao">
+        Panorama das escolas incluídas no monitoramento, com destaques de desempenho multissistema, presença escolar e IFA.
+      </p>
+
+      <section class="indicadores" aria-label="Indicadores gerais">
+        <article class="indicador">
+          <h3>Escolas monitoradas</h3>
+          <p class="valor" id="kpi-escolas">—</p>
+          <p class="apoio">Escolas presentes na base do painel</p>
+        </article>
+
+        <article class="indicador">
+          <h3>IFA da URE</h3>
+          <p class="valor">83,3%</p>
+          <p class="apoio">Índice de presença anual de referência</p>
+        </article>
+
+        <article class="indicador">
+          <h3>1º lugar — ranking geral</h3>
+          <p class="valor" id="kpi-ranking">—</p>
+          <p class="apoio">Desempenho multissistema</p>
+        </article>
+
+        <article class="indicador">
+          <h3>Maior nota final</h3>
+          <p class="valor" id="kpi-nota">—</p>
+          <p class="apoio">Resultado consolidado</p>
+        </article>
+
+        <article class="indicador">
+          <h3>Maior presença</h3>
+          <p class="valor" id="kpi-presenca">—</p>
+          <p class="apoio">Presença consolidada até a semana 37</p>
+        </article>
+
+        <article class="indicador">
+          <h3>Dentro do IFA</h3>
+          <p class="valor" id="kpi-ifa">—</p>
+          <p class="apoio">Escolas que já atingiram ou superaram o IFA</p>
+        </article>
+      </section>
+
+      <section class="painel" aria-labelledby="titulo-resumo">
+        <header class="painel-cabecalho">
+          <h3 id="titulo-resumo">Resumo das escolas</h3>
+          <p>Ordenado pela posição do ranking geral. Selecione a escola para ver os detalhes.</p>
+        </header>
+
+        <table>
+          <caption class="sr-only">Resumo das escolas monitoradas pela URE</caption>
+          <thead>
+            <tr>
+              <th scope="col">Posição</th>
+              <th scope="col">Escola</th>
+              <th scope="col">Nota final</th>
+              <th scope="col">Presença</th>
+              <th scope="col">IFA</th>
+              <th scope="col">Situação</th>
+            </tr>
+          </thead>
+          <tbody id="tabela-resumo"></tbody>
+        </table>
+      </section>
+    </section>
+
+    <!-- ===================== -->
+    <!-- ESCOLAS               -->
+    <!-- ===================== -->
+    <section id="view-escolas" class="visao" aria-labelledby="titulo-escolas">
+      <h2 id="titulo-escolas">Escolas</h2>
+      <p class="descricao">
+        Consulte os indicadores por escola, organize a tabela pelos critérios disponíveis e acesse a ficha individual.
+      </p>
+
+      <form class="filtros" aria-label="Filtros das escolas">
+        <p class="campo">
+          <label for="busca-escola">Buscar escola</label>
+          <input type="search" id="busca-escola" name="busca-escola" placeholder="Nome ou código da escola">
+        </p>
+
+        <p class="campo">
+          <label for="filtro-supervisor">Supervisor(a)</label>
+          <select id="filtro-supervisor" name="filtro-supervisor">
+            <option value="">Todos</option>
+          </select>
+        </p>
+
+        <p class="campo">
+          <label for="ordenar-escolas">Ordenar por</label>
+          <select id="ordenar-escolas" name="ordenar-escolas">
+            <option value="ranking">Posição no ranking geral</option>
+            <option value="nota">Maior nota final</option>
+            <option value="presenca">Maior presença</option>
+            <option value="ifa">Maior IFA</option>
+            <option value="nome">Nome da escola</option>
+          </select>
+        </p>
+
+        <p class="campo campo-botao">
+          <button type="reset" class="botao-secundario" id="limpar-filtros">Limpar filtros</button>
+        </p>
+      </form>
+
+      <section class="painel" aria-labelledby="titulo-classificacao">
+        <header class="painel-cabecalho">
+          <h3 id="titulo-classificacao">Classificação das escolas</h3>
+          <p id="contador-escolas">—</p>
+        </header>
+
+        <table>
+          <caption class="sr-only">Classificação das escolas por indicadores de desempenho, presença e IFA</caption>
+          <thead>
+            <tr>
+              <th scope="col">Posição</th>
+              <th scope="col">Escola</th>
+              <th scope="col">Nota final</th>
+              <th scope="col">Presença</th>
+              <th scope="col">IFA</th>
+              <th scope="col">Supervisor(a)</th>
+              <th scope="col">Situação</th>
+            </tr>
+          </thead>
+          <tbody id="tabela-escolas"></tbody>
+        </table>
+      </section>
+    </section>
+
+    <!-- ===================== -->
+    <!-- PLATAFORMAS           -->
+    <!-- ===================== -->
+    <section id="view-plataformas" class="visao" aria-labelledby="titulo-plataformas">
+      <h2 id="titulo-plataformas">Plataformas</h2>
+      <p class="descricao">
+        Acompanhe o resultado das escolas em cada plataforma e identifique pontos fortes e oportunidades de apoio.
+      </p>
+
+      <form class="filtros" aria-label="Filtros das plataformas">
+        <p class="campo">
+          <label for="selecionar-plataforma">Plataforma</label>
+          <select id="selecionar-plataforma" name="selecionar-plataforma">
+            <option value="tarefa">Tarefa SP</option>
+            <option value="redacao">Redação SP</option>
+            <option value="leia">Leia SP</option>
+            <option value="speak">SPeak</option>
+            <option value="alura">Alura</option>
+            <option value="matific">Matific — Anos Finais</option>
+            <option value="khan">Khan Academy</option>
+          </select>
+        </p>
+
+        <p class="campo">
+          <label for="busca-plataforma">Buscar escola</label>
+          <input type="search" id="busca-plataforma" name="busca-plataforma" placeholder="Nome ou código da escola">
+        </p>
+      </form>
+
+      <section class="painel" aria-labelledby="titulo-plataforma-selecionada">
+        <header class="painel-cabecalho">
+          <h3 id="titulo-plataforma-selecionada">Tarefa SP</h3>
+          <p id="descricao-plataforma">
+            Escolas ordenadas pelo indicador da plataforma selecionada.
+          </p>
+        </header>
+
+        <table>
+          <caption class="sr-only">Ranking das escolas na plataforma selecionada</caption>
+          <thead>
+            <tr>
+              <th scope="col">Posição</th>
+              <th scope="col">Escola</th>
+              <th scope="col">Resultado</th>
+            </tr>
+          </thead>
+          <tbody id="tabela-plataforma"></tbody>
+        </table>
+      </section>
+    </section>
+
+    <!-- ===================== -->
+    <!-- ALUNO PRESENTE / IFA  -->
+    <!-- ===================== -->
+    <section id="view-ifa" class="visao" aria-labelledby="titulo-ifa">
+      <h2 id="titulo-ifa">Aluno Presente / IFA</h2>
+      <p class="descricao">
+        Acompanhe a presença consolidada, o IFA de cada escola e a média necessária nas semanas 38 a 42 para atingir a meta.
+      </p>
+
+      <section class="calculadora" aria-labelledby="titulo-calculadora">
+        <header class="calculadora-cabecalho">
+          <h3 id="titulo-calculadora">Calculadora semanal do IFA</h3>
+          <p>
+            Informe a presença da semana. O painel recalcula a média consolidada,
+            a média necessária e a situação de cada escola.
+          </p>
+        </header>
+
+        <form id="formulario-ifa" aria-label="Lançamento semanal do Aluno Presente">
+          <fieldset>
+            <legend>Lançamento da semana</legend>
+
+            <p class="campo">
+              <label for="semana-calculadora">Semana atual</label>
+              <select id="semana-calculadora" name="semana-calculadora">
+                <option value="38">Semana 38</option>
+                <option value="39">Semana 39</option>
+                <option value="40">Semana 40</option>
+                <option value="41">Semana 41</option>
+                <option value="42">Semana 42</option>
+              </select>
+            </p>
+
+            <section class="lancamentos" id="lancamento-grid" aria-live="polite"></section>
+
+            <menu class="acoes">
+              <li><button type="button" class="botao-primario" id="calcular-semana">Calcular e salvar semana</button></li>
+              <li><button type="button" class="botao-secundario" id="exportar-lancamentos">Exportar lançamentos</button></li>
+              <li><button type="button" class="botao-secundario" id="restaurar-base">Restaurar base original</button></li>
+            </menu>
+          </fieldset>
+        </form>
+      </section>
+
+      <aside class="orientacao" aria-label="Como interpretar a situação do IFA">
+        <h3>Como interpretar a situação</h3>
+        <ul>
+          <li><strong>Dentro do IFA:</strong> a escola já atingiu ou superou seu IFA até a semana 37.</li>
+          <li><strong>Em acompanhamento:</strong> ainda é possível atingir o IFA, desde que a escola alcance a média indicada nas semanas 38 a 42.</li>
+          <li><strong>Fora do alcance da meta:</strong> mesmo com 100% de presença nas semanas restantes, o IFA não será alcançado dentro do período.</li>
+        </ul>
+      </aside>
+
+      <form class="filtros" aria-label="Filtros de presença e IFA">
+        <p class="campo">
+          <label for="busca-ifa">Buscar escola</label>
+          <input type="search" id="busca-ifa" name="busca-ifa" placeholder="Nome ou código da escola">
+        </p>
+
+        <p class="campo">
+          <label for="filtro-situacao-ifa">Situação</label>
+          <select id="filtro-situacao-ifa" name="filtro-situacao-ifa">
+            <option value="">Todas</option>
+            <option value="Dentro do IFA">Dentro do IFA</option>
+            <option value="Em acompanhamento">Em acompanhamento</option>
+            <option value="Fora do alcance da meta">Fora do alcance da meta</option>
+          </select>
+        </p>
+
+        <p class="campo">
+          <label for="ordenar-ifa">Ordenar por</label>
+          <select id="ordenar-ifa" name="ordenar-ifa">
+            <option value="presenca">Maior presença</option>
+            <option value="ifa">Maior IFA</option>
+            <option value="necessaria">Menor média necessária</option>
+            <option value="nome">Nome da escola</option>
+          </select>
+        </p>
+
+        <p class="campo campo-botao">
+          <button type="reset" class="botao-secundario" id="limpar-ifa">Limpar filtros</button>
+        </p>
+      </form>
+
+      <section class="painel" aria-labelledby="titulo-presenca-ifa">
+        <header class="painel-cabecalho">
+          <h3 id="titulo-presenca-ifa">Presença e IFA por escola</h3>
+          <p id="contador-ifa">—</p>
+        </header>
+
+        <table>
+          <caption class="sr-only">Presença consolidada, IFA e média necessária por escola</caption>
+          <thead>
+            <tr>
+              <th scope="col">Escola</th>
+              <th scope="col">Presença S1–S37</th>
+              <th scope="col">IFA da escola</th>
+              <th scope="col">IFA da URE</th>
+              <th scope="col">Média necessária S38–S42</th>
+              <th scope="col">Situação</th>
+            </tr>
+          </thead>
+          <tbody id="tabela-ifa"></tbody>
+        </table>
+      </section>
+    </section>
+
+    <!-- ===================== -->
+    <!-- SOBRE OS DADOS        -->
+    <!-- ===================== -->
+    <section id="view-sobre" class="visao" aria-labelledby="titulo-sobre">
+      <h2 id="titulo-sobre">Sobre os dados</h2>
+
+      <article class="painel">
+        <h3>Período analisado</h3>
+        <p>
+          O levantamento foi realizado a partir dos dados da <strong>1ª semana até a semana 37</strong>.
+          As projeções de IFA consideram as <strong>semanas 38 a 42</strong>, com encerramento previsto na segunda semana de novembro.
+        </p>
+
+        <h3>Finalidade</h3>
+        <p>
+          Este painel é destinado ao uso interno da Unidade Regional de Ensino de São José do Rio Preto.
+          Seu objetivo é organizar informações já levantadas para apoiar o acompanhamento pedagógico, a supervisão e o planejamento de ações.
+        </p>
+
+        <h3>Indicadores apresentados</h3>
+        <ul>
+          <li>Ranking geral de desempenho multissistema.</li>
+          <li>Resultados por plataforma: Tarefa SP, Redação SP, Leia SP, SPeak, Alura, Matific e Khan Academy.</li>
+          <li>Presença escolar consolidada até a semana 37.</li>
+          <li>IFA por escola e IFA de referência da URE: 83,3%.</li>
+          <li>Média necessária nas semanas 38 a 42 para atingir o IFA.</li>
+        </ul>
+
+        <h3>Classificação do IFA</h3>
+        <ul>
+          <li><strong>Dentro do IFA:</strong> a escola já atingiu ou superou sua meta.</li>
+          <li><strong>Em acompanhamento:</strong> a meta ainda pode ser alcançada até o encerramento do período.</li>
+          <li><strong>Fora do alcance da meta:</strong> a meta do IFA não é alcançável dentro do período considerado.</li>
+        </ul>
+
+        <h3>Observações</h3>
+        <p>
+          Os valores exibidos correspondem aos dados consolidados disponíveis na planilha de origem.
+          Resultados ausentes são apresentados como “Sem dado” e não são tratados como zero.
+          A média necessária é uma projeção de apoio à gestão e não substitui os resultados oficiais.
+        </p>
+      </article>
+    </section>
+
+  </main>
+
+  <footer class="rodape">
+    <section class="container">
+      <p>
+        <strong>Monitoramento Escolar — URE São José do Rio Preto.</strong><br>
+        Levantamento referente à 1ª semana até a semana 37. Projeção de IFA para as semanas 38 a 42.
+      </p>
+      <p class="rodape-pequeno">
+        Desenvolvido por Luciano Julio da Silva — PEC Desenvolvimento Curricular de Tecnologia da URE de São José do Rio Preto,
+        com apoio de inteligência artificial (Perplexity, 2026).
+      </p>
+    </section>
+  </footer>
+
+  <dialog id="modal-escola" class="modal" aria-labelledby="modal-titulo">
+    <article>
+      <header class="modal-cabecalho">
+        <h2 id="modal-titulo">Escola</h2>
+        <button type="button" class="modal-fechar" id="fechar-modal" aria-label="Fechar ficha da escola">×</button>
+      </header>
+
+      <section id="modal-conteudo" class="modal-conteudo"></section>
+    </article>
+  </dialog>
+
+  <script src="dados.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
