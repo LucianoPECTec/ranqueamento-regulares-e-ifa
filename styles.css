@@ -1,7 +1,7 @@
 /* =========================================================
    Monitoramento Escolar — URE São José do Rio Preto
    Arquivo: styles.css
-   Layout semântico e responsivo
+   Layout semântico, institucional e responsivo
    ========================================================= */
 
 :root {
@@ -225,6 +225,12 @@ h3 {
   color: var(--azul-escuro);
 }
 
+h4 {
+  margin: 0 0 8px;
+  color: var(--azul-escuro);
+  font-size: .92rem;
+}
+
 /* =========================
    Indicadores
    ========================= */
@@ -299,21 +305,17 @@ h3 {
    Tabelas
    ========================= */
 
-.table-wrap,
-.painel table {
-  width: 100%;
-}
-
-.painel table {
-  border-collapse: collapse;
-  min-width: 720px;
-  font-size: .92rem;
-}
-
-.painel .table-scroll {
+.tabela-rolagem {
   overflow-x: auto;
   border: 1px solid var(--borda);
   border-radius: 10px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 720px;
+  font-size: .92rem;
 }
 
 th,
@@ -494,13 +496,6 @@ select {
   border: 1px solid var(--borda);
   border-radius: 10px;
   padding: 12px;
-}
-
-.lancamento strong {
-  display: block;
-  margin-bottom: 8px;
-  font-size: .9rem;
-  color: var(--azul-escuro);
 }
 
 .lancamento input {
@@ -706,8 +701,4 @@ select {
   .acoes button {
     width: 100%;
   }
-}
-css
-.painel {
-  overflow-x: auto;
 }
