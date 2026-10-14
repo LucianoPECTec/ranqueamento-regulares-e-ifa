@@ -1,7 +1,7 @@
 /* =========================================================
    Monitoramento Escolar — URE São José do Rio Preto
    Arquivo: app.js
-   Compatível com index.html semântico e styles.css refeito
+   Base: 29 escolas | Semanas 1 a 37 | Projeção: semanas 38 a 42
    ========================================================= */
 
 const CHAVE_ARMAZENAMENTO = "lancamentosIFA-URE-SJRP";
@@ -16,7 +16,10 @@ const $ = seletor => document.querySelector(seletor);
 const $$ = seletor => Array.from(document.querySelectorAll(seletor));
 
 function numero(valor, casas = 2) {
-  if (valor === null || valor === undefined || valor === "") return "Sem dado";
+  if (valor === null || valor === undefined || valor === "") {
+    return "Sem dado";
+  }
+
   return Number(valor).toLocaleString("pt-BR", {
     minimumFractionDigits: casas,
     maximumFractionDigits: casas
@@ -24,7 +27,10 @@ function numero(valor, casas = 2) {
 }
 
 function percentual(valor, casas = 2) {
-  if (valor === null || valor === undefined || valor === "") return "Sem dado";
+  if (valor === null || valor === undefined || valor === "") {
+    return "Sem dado";
+  }
+
   return `${numero(valor * 100, casas)}%`;
 }
 
@@ -45,7 +51,11 @@ function presencaAtual(escola) {
   let soma = escola.presenca * CONFIG.semanasConcluidas * 100;
   let semanas = CONFIG.semanasConcluidas;
 
-  for (let semana = CONFIG.semanasConcluidas + 1; semana <= CONFIG.semanaFinal; semana++) {
+  for (
+    let semana = CONFIG.semanasConcluidas + 1;
+    semana <= CONFIG.semanaFinal;
+    semana++
+  ) {
     const valor = lancamentos?.[semana]?.[codigo];
 
     if (valor !== undefined && valor !== null && valor !== "") {
@@ -70,7 +80,9 @@ function mediaNecessaria(escola) {
   const atual = presencaAtual(escola);
   const restantes = semanasRestantes(escola);
 
-  if (restantes === 0) return null;
+  if (restantes === 0) {
+    return null;
+  }
 
   return (CONFIG.semanaFinal * escola.ifa - atual.soma) / restantes;
 }
@@ -79,15 +91,30 @@ function situacaoIFA(escola) {
   const atual = presencaAtual(escola);
   const necessaria = mediaNecessaria(escola);
 
-  if (atual.media >= escola.ifa) return "Dentro do IFA";
-  if (necessaria === null) return "Dentro do IFA";
-  if (necessaria > 100) return "Fora do alcance da meta";
+  if (atual.media >= escola.ifa) {
+    return "Dentro do IFA";
+  }
+
+  if (necessaria === null) {
+    return "Dentro do IFA";
+  }
+
+  if (necessaria > 100) {
+    return "Fora do alcance da meta";
+  }
+
   return "Em acompanhamento";
 }
 
 function classeSelo(situacao) {
-  if (situacao === "Dentro do IFA") return "selo selo-dentro";
-  if (situacao === "Fora do alcance da meta") return "selo selo-fora";
+  if (situacao === "Dentro do IFA") {
+    return "selo selo-dentro";
+  }
+
+  if (situacao === "Fora do alcance da meta") {
+    return "selo selo-fora";
+  }
+
   return "selo selo-acompanhamento";
 }
 
@@ -138,7 +165,6 @@ function configurarNavegacao() {
 
 function renderizarVisaoGeral() {
   $("#kpi-escolas").textContent = ESCOLAS.length;
-
   $("#kpi-ranking").textContent = ESCOLAS[0].nome;
 
   const maiorNota = [...ESCOLAS].sort(
@@ -306,7 +332,10 @@ function renderizarPlataformas() {
     "Escolas ordenadas pelo indicador da plataforma selecionada. Resultados ausentes são exibidos como “Sem dado”.";
 
   let lista = ESCOLAS.filter(escola => {
-    if (!busca) return true;
+    if (!busca) {
+      return true;
+    }
+
     return nomeCompleto(escola).toLowerCase().includes(busca);
   });
 
@@ -504,7 +533,9 @@ function restaurarBase() {
     "Deseja restaurar a base original e apagar os lançamentos salvos neste navegador?"
   );
 
-  if (!confirmacao) return;
+  if (!confirmacao) {
+    return;
+  }
 
   localStorage.removeItem(CHAVE_ARMAZENAMENTO);
   lancamentos = structuredClone(LANCAMENTOS_SEMANAIS);
@@ -540,7 +571,9 @@ function configurarIFA() {
 function abrirFicha(codigo) {
   const escola = buscarEscolaPorCodigo(codigo);
 
-  if (!escola) return;
+  if (!escola) {
+    return;
+  }
 
   const atual = presencaAtual(escola);
   const necessaria = mediaNecessaria(escola);
@@ -593,27 +626,29 @@ function abrirFicha(codigo) {
 
     <h3>Desempenho por plataforma</h3>
 
-    <table>
-      <caption class="sr-only">
-        Resultados de ${nomeCompleto(escola)} por plataforma
-      </caption>
+    <section class="tabela-rolagem">
+      <table>
+        <caption class="sr-only">
+          Resultados de ${nomeCompleto(escola)} por plataforma
+        </caption>
 
-      <thead>
-        <tr>
-          <th scope="col">Plataforma</th>
-          <th scope="col">Resultado</th>
-        </tr>
-      </thead>
-
-      <tbody>
-        ${Object.entries(PLATAFORMAS).map(([chave, config]) => `
+        <thead>
           <tr>
-            <td>${config.nome}</td>
-            <td>${numero(escola[config.campo], config.casas)}</td>
+            <th scope="col">Plataforma</th>
+            <th scope="col">Resultado</th>
           </tr>
-        `).join("")}
-      </tbody>
-    </table>
+        </thead>
+
+        <tbody>
+          ${Object.entries(PLATAFORMAS).map(([chave, config]) => `
+            <tr>
+              <td>${config.nome}</td>
+              <td>${numero(escola[config.campo], config.casas)}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </section>
 
     <h3>Supervisão</h3>
     <p>
