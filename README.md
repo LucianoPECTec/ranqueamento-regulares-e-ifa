@@ -1,3 +1,5 @@
+📖 [Acesse a Wiki do projeto](https://github.com/SEU-USUARIO/NOME-DO-REPOSITORIO/wiki)
+
 # 📊 Monitoramento Escolar — URE São José do Rio Preto
 
 Painel web interno para acompanhamento do desempenho multissistema, da presença escolar e do IFA das escolas da Unidade Regional de Ensino (URE) de São José do Rio Preto.
