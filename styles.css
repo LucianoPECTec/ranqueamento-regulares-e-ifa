@@ -707,3 +707,7 @@ select {
     width: 100%;
   }
 }
+css
+.painel {
+  overflow-x: auto;
+}
