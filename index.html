@@ -27,11 +27,31 @@
 
     <nav class="navegacao" aria-label="Navegação principal">
       <ul class="container menu">
-        <li><button type="button" class="menu-botao ativo" data-view="geral">Visão geral</button></li>
-        <li><button type="button" class="menu-botao" data-view="escolas">Escolas</button></li>
-        <li><button type="button" class="menu-botao" data-view="plataformas">Plataformas</button></li>
-        <li><button type="button" class="menu-botao" data-view="ifa">Aluno Presente / IFA</button></li>
-        <li><button type="button" class="menu-botao" data-view="sobre">Sobre os dados</button></li>
+        <li>
+          <button type="button" class="menu-botao ativo" data-view="geral">
+            Visão geral
+          </button>
+        </li>
+        <li>
+          <button type="button" class="menu-botao" data-view="escolas">
+            Escolas
+          </button>
+        </li>
+        <li>
+          <button type="button" class="menu-botao" data-view="plataformas">
+            Plataformas
+          </button>
+        </li>
+        <li>
+          <button type="button" class="menu-botao" data-view="ifa">
+            Aluno Presente / IFA
+          </button>
+        </li>
+        <li>
+          <button type="button" class="menu-botao" data-view="sobre">
+            Sobre os dados
+          </button>
+        </li>
       </ul>
     </nav>
   </header>
@@ -54,6 +74,7 @@
     <!-- ===================== -->
     <section id="view-geral" class="visao ativa" aria-labelledby="titulo-geral">
       <h2 id="titulo-geral">Visão geral</h2>
+
       <p class="descricao">
         Panorama das escolas incluídas no monitoramento, com destaques de desempenho multissistema, presença escolar e IFA.
       </p>
@@ -102,20 +123,26 @@
           <p>Ordenado pela posição do ranking geral. Selecione a escola para ver os detalhes.</p>
         </header>
 
-        <table>
-          <caption class="sr-only">Resumo das escolas monitoradas pela URE</caption>
-          <thead>
-            <tr>
-              <th scope="col">Posição</th>
-              <th scope="col">Escola</th>
-              <th scope="col">Nota final</th>
-              <th scope="col">Presença</th>
-              <th scope="col">IFA</th>
-              <th scope="col">Situação</th>
-            </tr>
-          </thead>
-          <tbody id="tabela-resumo"></tbody>
-        </table>
+        <section class="tabela-rolagem">
+          <table>
+            <caption class="sr-only">
+              Resumo das escolas monitoradas pela URE
+            </caption>
+
+            <thead>
+              <tr>
+                <th scope="col">Posição</th>
+                <th scope="col">Escola</th>
+                <th scope="col">Nota final</th>
+                <th scope="col">Presença</th>
+                <th scope="col">IFA</th>
+                <th scope="col">Situação</th>
+              </tr>
+            </thead>
+
+            <tbody id="tabela-resumo"></tbody>
+          </table>
+        </section>
       </section>
     </section>
 
@@ -124,6 +151,7 @@
     <!-- ===================== -->
     <section id="view-escolas" class="visao" aria-labelledby="titulo-escolas">
       <h2 id="titulo-escolas">Escolas</h2>
+
       <p class="descricao">
         Consulte os indicadores por escola, organize a tabela pelos critérios disponíveis e acesse a ficha individual.
       </p>
@@ -131,7 +159,12 @@
       <form class="filtros" aria-label="Filtros das escolas">
         <p class="campo">
           <label for="busca-escola">Buscar escola</label>
-          <input type="search" id="busca-escola" name="busca-escola" placeholder="Nome ou código da escola">
+          <input
+            type="search"
+            id="busca-escola"
+            name="busca-escola"
+            placeholder="Nome ou código da escola"
+          >
         </p>
 
         <p class="campo">
@@ -153,7 +186,9 @@
         </p>
 
         <p class="campo campo-botao">
-          <button type="reset" class="botao-secundario" id="limpar-filtros">Limpar filtros</button>
+          <button type="reset" class="botao-secundario" id="limpar-filtros">
+            Limpar filtros
+          </button>
         </p>
       </form>
 
@@ -163,21 +198,27 @@
           <p id="contador-escolas">—</p>
         </header>
 
-        <table>
-          <caption class="sr-only">Classificação das escolas por indicadores de desempenho, presença e IFA</caption>
-          <thead>
-            <tr>
-              <th scope="col">Posição</th>
-              <th scope="col">Escola</th>
-              <th scope="col">Nota final</th>
-              <th scope="col">Presença</th>
-              <th scope="col">IFA</th>
-              <th scope="col">Supervisor(a)</th>
-              <th scope="col">Situação</th>
-            </tr>
-          </thead>
-          <tbody id="tabela-escolas"></tbody>
-        </table>
+        <section class="tabela-rolagem">
+          <table>
+            <caption class="sr-only">
+              Classificação das escolas por desempenho, presença e IFA
+            </caption>
+
+            <thead>
+              <tr>
+                <th scope="col">Posição</th>
+                <th scope="col">Escola</th>
+                <th scope="col">Nota final</th>
+                <th scope="col">Presença</th>
+                <th scope="col">IFA</th>
+                <th scope="col">Supervisor(a)</th>
+                <th scope="col">Situação</th>
+              </tr>
+            </thead>
+
+            <tbody id="tabela-escolas"></tbody>
+          </table>
+        </section>
       </section>
     </section>
 
@@ -186,6 +227,7 @@
     <!-- ===================== -->
     <section id="view-plataformas" class="visao" aria-labelledby="titulo-plataformas">
       <h2 id="titulo-plataformas">Plataformas</h2>
+
       <p class="descricao">
         Acompanhe o resultado das escolas em cada plataforma e identifique pontos fortes e oportunidades de apoio.
       </p>
@@ -206,7 +248,12 @@
 
         <p class="campo">
           <label for="busca-plataforma">Buscar escola</label>
-          <input type="search" id="busca-plataforma" name="busca-plataforma" placeholder="Nome ou código da escola">
+          <input
+            type="search"
+            id="busca-plataforma"
+            name="busca-plataforma"
+            placeholder="Nome ou código da escola"
+          >
         </p>
       </form>
 
@@ -218,17 +265,23 @@
           </p>
         </header>
 
-        <table>
-          <caption class="sr-only">Ranking das escolas na plataforma selecionada</caption>
-          <thead>
-            <tr>
-              <th scope="col">Posição</th>
-              <th scope="col">Escola</th>
-              <th scope="col">Resultado</th>
-            </tr>
-          </thead>
-          <tbody id="tabela-plataforma"></tbody>
-        </table>
+        <section class="tabela-rolagem">
+          <table>
+            <caption class="sr-only">
+              Ranking das escolas na plataforma selecionada
+            </caption>
+
+            <thead>
+              <tr>
+                <th scope="col">Posição</th>
+                <th scope="col">Escola</th>
+                <th scope="col">Resultado</th>
+              </tr>
+            </thead>
+
+            <tbody id="tabela-plataforma"></tbody>
+          </table>
+        </section>
       </section>
     </section>
 
@@ -237,6 +290,7 @@
     <!-- ===================== -->
     <section id="view-ifa" class="visao" aria-labelledby="titulo-ifa">
       <h2 id="titulo-ifa">Aluno Presente / IFA</h2>
+
       <p class="descricao">
         Acompanhe a presença consolidada, o IFA de cada escola e a média necessária nas semanas 38 a 42 para atingir a meta.
       </p>
@@ -265,12 +319,28 @@
               </select>
             </p>
 
-            <section class="lancamentos" id="lancamento-grid" aria-live="polite"></section>
+            <section
+              class="lancamentos"
+              id="lancamento-grid"
+              aria-live="polite"
+            ></section>
 
             <menu class="acoes">
-              <li><button type="button" class="botao-primario" id="calcular-semana">Calcular e salvar semana</button></li>
-              <li><button type="button" class="botao-secundario" id="exportar-lancamentos">Exportar lançamentos</button></li>
-              <li><button type="button" class="botao-secundario" id="restaurar-base">Restaurar base original</button></li>
+              <li>
+                <button type="button" class="botao-primario" id="calcular-semana">
+                  Calcular e salvar semana
+                </button>
+              </li>
+              <li>
+                <button type="button" class="botao-secundario" id="exportar-lancamentos">
+                  Exportar lançamentos
+                </button>
+              </li>
+              <li>
+                <button type="button" class="botao-secundario" id="restaurar-base">
+                  Restaurar base original
+                </button>
+              </li>
             </menu>
           </fieldset>
         </form>
@@ -279,16 +349,30 @@
       <aside class="orientacao" aria-label="Como interpretar a situação do IFA">
         <h3>Como interpretar a situação</h3>
         <ul>
-          <li><strong>Dentro do IFA:</strong> a escola já atingiu ou superou seu IFA até a semana 37.</li>
-          <li><strong>Em acompanhamento:</strong> ainda é possível atingir o IFA, desde que a escola alcance a média indicada nas semanas 38 a 42.</li>
-          <li><strong>Fora do alcance da meta:</strong> mesmo com 100% de presença nas semanas restantes, o IFA não será alcançado dentro do período.</li>
+          <li>
+            <strong>Dentro do IFA:</strong>
+            a escola já atingiu ou superou seu IFA até a semana 37.
+          </li>
+          <li>
+            <strong>Em acompanhamento:</strong>
+            ainda é possível atingir o IFA, desde que a escola alcance a média indicada nas semanas 38 a 42.
+          </li>
+          <li>
+            <strong>Fora do alcance da meta:</strong>
+            mesmo com 100% de presença nas semanas restantes, o IFA não será alcançado dentro do período.
+          </li>
         </ul>
       </aside>
 
       <form class="filtros" aria-label="Filtros de presença e IFA">
         <p class="campo">
           <label for="busca-ifa">Buscar escola</label>
-          <input type="search" id="busca-ifa" name="busca-ifa" placeholder="Nome ou código da escola">
+          <input
+            type="search"
+            id="busca-ifa"
+            name="busca-ifa"
+            placeholder="Nome ou código da escola"
+          >
         </p>
 
         <p class="campo">
@@ -312,7 +396,9 @@
         </p>
 
         <p class="campo campo-botao">
-          <button type="reset" class="botao-secundario" id="limpar-ifa">Limpar filtros</button>
+          <button type="reset" class="botao-secundario" id="limpar-ifa">
+            Limpar filtros
+          </button>
         </p>
       </form>
 
@@ -322,20 +408,26 @@
           <p id="contador-ifa">—</p>
         </header>
 
-        <table>
-          <caption class="sr-only">Presença consolidada, IFA e média necessária por escola</caption>
-          <thead>
-            <tr>
-              <th scope="col">Escola</th>
-              <th scope="col">Presença S1–S37</th>
-              <th scope="col">IFA da escola</th>
-              <th scope="col">IFA da URE</th>
-              <th scope="col">Média necessária S38–S42</th>
-              <th scope="col">Situação</th>
-            </tr>
-          </thead>
-          <tbody id="tabela-ifa"></tbody>
-        </table>
+        <section class="tabela-rolagem">
+          <table>
+            <caption class="sr-only">
+              Presença consolidada, IFA e média necessária por escola
+            </caption>
+
+            <thead>
+              <tr>
+                <th scope="col">Escola</th>
+                <th scope="col">Presença S1–S37</th>
+                <th scope="col">IFA da escola</th>
+                <th scope="col">IFA da URE</th>
+                <th scope="col">Média necessária S38–S42</th>
+                <th scope="col">Situação</th>
+              </tr>
+            </thead>
+
+            <tbody id="tabela-ifa"></tbody>
+          </table>
+        </section>
       </section>
     </section>
 
@@ -402,7 +494,12 @@
     <article>
       <header class="modal-cabecalho">
         <h2 id="modal-titulo">Escola</h2>
-        <button type="button" class="modal-fechar" id="fechar-modal" aria-label="Fechar ficha da escola">×</button>
+        <button
+          type="button"
+          class="modal-fechar"
+          id="fechar-modal"
+          aria-label="Fechar ficha da escola"
+        >×</button>
       </header>
 
       <section id="modal-conteudo" class="modal-conteudo"></section>
