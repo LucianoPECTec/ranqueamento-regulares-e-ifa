@@ -1,465 +1,662 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Monitoramento Escolar — Escolas Regulares — URE São José do Rio Preto</title>
-  <meta name="description" content="Painel interno de acompanhamento do desempenho multissistema, presença escolar e IFA das escolas regulares da URE São José do Rio Preto.">
-  <link rel="stylesheet" href="styles.css">
-</head>
+/* =========================================================
+   Monitoramento Escolar — URE São José do Rio Preto
+   Arquivo: dados.js  |  Escopo: ESCOLAS REGULARES
+   ---------------------------------------------------------
+   Este arquivo guarda SOMENTE dados (nenhuma lógica de tela):
+   1. CONFIG ............ período, semana final e IFA da URE
+   2. PLATAFORMAS ....... nome, campo e casas decimais
+   3. ESCOLAS ........... base consolidada até a semana 37
+   4. LANCAMENTOS_SEMANAIS . presença das semanas 38 a 42
+   ========================================================= */
 
-<body>
-  <a class="pular-link" href="#conteudo">Pular para o conteúdo</a>
-  <p id="status-painel" class="sr-only" role="status" aria-live="polite"></p>
+const CONFIG = {
+  rede: "Escolas regulares",
+  anoLetivo: 2026,
+  semanasConcluidas: 37,
+  semanaFinal: 42,
+  ifaURE: 83.3,
+  urlSincronizacao: "",
+  periodos: {
+    levantamento: "1ª semana até a semana 37",
+    projecao: "semanas 38 a 42"
+  }
+};
 
-  <!-- ========== CABEÇALHO ========== -->
-  <header class="topbar">
-    <div class="container identidade">
-      <div>
-        <p class="topbar-tag">Unidade Regional de Ensino</p>
-        <h1>São José do Rio Preto</h1>
-        <p class="topbar-subtitle">Monitoramento Escolar — Desempenho Multissistema e IFA</p>
-        <p class="faixa-regulares">Somente escolas regulares</p>
-      </div>
+const PLATAFORMAS = {
+  tarefa: {
+    nome: "Tarefa SP",
+    campo: "tarefa",
+    formato: "percentual",
+    campoNota: "notaTarefa",
+    casas: 2
+  },
+  redacao: {
+    nome: "Redação SP",
+    campo: "redacao",
+    casas: 2
+  },
+  leia: {
+    nome: "Leia SP",
+    campo: "leia",
+    casas: 2
+  },
+  speak: {
+    nome: "SPeak",
+    campo: "speak",
+    casas: 3
+  },
+  alura: {
+    nome: "Alura",
+    campo: "alura",
+    casas: 2
+  },
+  matific: {
+    nome: "Matific — Anos Finais",
+    campo: "matific",
+    casas: 2
+  },
+  khan: {
+    nome: "Khan Academy",
+    campo: "khan",
+    casas: 2
+  }
+};
 
-      <aside class="periodo" aria-label="Período dos dados">
-        <h2 class="periodo-titulo">Período do levantamento</h2>
-        <p><strong>1ª semana até a semana 37</strong></p>
-        <p class="periodo-detalle">Projeção de IFA: semanas 38 a 42</p>
-      </aside>
-    </div>
+const ESCOLAS = [
+  {
+    posicao: 1,
+    nome: "PEDRO ELIAS PROFESSOR",
+    codigo: "28836",
+    top3: 4,
+    top5: 5,
+    top10: 7,
+    posicaoMedia: 8.2,
+    notaFinal: 9.475728155339805,
+    tarefa: 0.6582721153604746,
+    redacao: 0.6998660863742884,
+    leia: 555.89786407767,
+    speak: 0.863,
+    alura: 7.015625,
+    matific: null,
+    khan: 6.128125919388055,
+    notaTarefa: 9.403887362292494,
+    presenca: 0.886,
+    ifa: 83.2,
+    supervisor: "WAGNER HENRIQUE DA SILVA"
+  },
+  {
+    posicao: 2,
+    nome: "IRMAOS ISMAEL",
+    codigo: "27765",
+    top3: 3,
+    top5: 6,
+    top10: 8,
+    posicaoMedia: 5.7,
+    notaFinal: 9.839803306466386,
+    tarefa: 0.499590991473178,
+    redacao: 0.7540200242718449,
+    leia: 658.9170631067956,
+    speak: 0.707,
+    alura: 5.894176136363637,
+    matific: 3.265067027148812,
+    khan: 4.828438228438229,
+    notaTarefa: 7.137332088867836,
+    presenca: 0.912,
+    ifa: 84.0,
+    supervisor: "SOLANGE MARIA DA SILVA"
+  },
+  {
+    posicao: 3,
+    nome: "CARLOS CASTILHO PROFESSOR",
+    codigo: "28241",
+    top3: 2,
+    top5: 3,
+    top10: 4,
+    posicaoMedia: 13.0,
+    notaFinal: 9.831734735973598,
+    tarefa: 0.6081055806676089,
+    redacao: 0.8206555700732829,
+    leia: 574.2487479406918,
+    speak: 0.465,
+    alura: 5.495204207920792,
+    matific: null,
+    khan: 1.048239291598023,
+    notaTarefa: 8.687222580965843,
+    presenca: 0.848,
+    ifa: 82.6,
+    supervisor: "MAURA CRISTINA DA SILVA"
+  },
+  {
+    posicao: 4,
+    nome: "ZULMIRA DA SILVA SALLES PROFESSORA",
+    codigo: "28605",
+    top3: 2,
+    top5: 3,
+    top10: 3,
+    posicaoMedia: 13.8,
+    notaFinal: 7.562974401057127,
+    tarefa: 0.5262559649036374,
+    redacao: 0.8480533926585093,
+    leia: 820.6991290322582,
+    speak: 0.299,
+    alura: 4.955233895705521,
+    matific: 1.732355816226784,
+    khan: null,
+    notaTarefa: 7.517942355766244,
+    presenca: 0.901,
+    ifa: 84.0,
+    supervisor: "EDMAR MONTELLI"
+  },
+  {
+    posicao: 5,
+    nome: "AUREA DE OLIVEIRA PROFESSORA",
+    codigo: "28666",
+    top3: 2,
+    top5: 2,
+    top10: 5,
+    posicaoMedia: 8.9,
+    notaFinal: 9.706111458493067,
+    tarefa: 0.5200575745745746,
+    redacao: 0.6775413711583925,
+    leia: 733.2967983789257,
+    speak: 0.296,
+    alura: 5.6684632120253164,
+    matific: 4.914797323888233,
+    khan: 3.317400812246173,
+    notaTarefa: 7.488796340139636,
+    presenca: 0.873,
+    ifa: 83.1,
+    supervisor: "MARIA LUCIA SOLER"
+  },
+  {
+    posicao: 6,
+    nome: "ALZIRA SALOMAO PROFESSORA",
+    codigo: "917291",
+    top3: 2,
+    top5: 2,
+    top10: 5,
+    posicaoMedia: 11.0,
+    notaFinal: 8.218458799119242,
+    tarefa: 0.6016015128729815,
+    redacao: 0.914102564102564,
+    leia: 591.9599786324782,
+    speak: 0.225,
+    alura: 5.610899390243903,
+    matific: 2.5692178192178194,
+    khan: null,
+    notaTarefa: 8.594307326756878,
+    presenca: 0.939,
+    ifa: 84.0,
+    supervisor: "MAURA CRISTINA DA SILVA"
+  },
+  {
+    posicao: 7,
+    nome: "PARQUE NOVA ESPERANCA",
+    codigo: "565064",
+    top3: 2,
+    top5: 2,
+    top10: 3,
+    posicaoMedia: 14.2,
+    notaFinal: 7.466897404295051,
+    tarefa: 0.47768742571124356,
+    redacao: 0.6583237437667817,
+    leia: 973.6538765822781,
+    speak: 0.137,
+    alura: 6.704264322916667,
+    matific: 2.340844889573704,
+    khan: 2.1032258064516127,
+    notaTarefa: 6.826016217834641,
+    presenca: 0.883,
+    ifa: 84.0,
+    supervisor: "ELISA REGINA SIGNORINI GODINHO"
+  },
+  {
+    posicao: 8,
+    nome: "CLEMENTE MARTON SEGURA PADRE",
+    codigo: "28745",
+    top3: 1,
+    top5: 2,
+    top10: 4,
+    posicaoMedia: 13.7,
+    notaFinal: 7.639820050490081,
+    tarefa: 0.5591812684512343,
+    redacao: 0.560025918944392,
+    leia: 731.7101225259197,
+    speak: 0.536,
+    alura: 5.024989111498257,
+    matific: 1.334271507646121,
+    khan: 4.93807959109164,
+    notaTarefa: 7.999327972663222,
+    presenca: 0.86,
+    ifa: 82.7,
+    supervisor: "LUCIANE GUIDUCE NOGUEIRA"
+  },
+  {
+    posicao: 9,
+    nome: "PARQUE DAS AROEIRAS II",
+    codigo: "565052",
+    top3: 1,
+    top5: 2,
+    top10: 3,
+    posicaoMedia: 12.7,
+    notaFinal: 7.661799261538462,
+    tarefa: 0.4868702335447038,
+    redacao: 0.6360512820512823,
+    leia: 619.2640923076927,
+    speak: 0.359,
+    alura: 6.078433794466403,
+    matific: 1.7753890253890259,
+    khan: 4.866137099146807,
+    notaTarefa: 6.947563362723199,
+    presenca: 0.876,
+    ifa: 84.0,
+    supervisor: "ANDERSON RIZZUTTI PRESTES"
+  },
+  {
+    posicao: 10,
+    nome: "GONCALVES MONSENHOR",
+    codigo: "28708",
+    top3: 1,
+    top5: 2,
+    top10: 3,
+    posicaoMedia: 17.4,
+    notaFinal: 9.127871621621622,
+    tarefa: 0.6303360215298219,
+    redacao: 0.627021796278258,
+    leia: 329.17813495782565,
+    speak: 0.657,
+    alura: 3.3836148648648647,
+    matific: null,
+    khan: 2.8097185538610088,
+    notaTarefa: 9.004800307568885,
+    presenca: 0.843,
+    ifa: 82.6,
+    supervisor: "MARIA LUCIA SOLER"
+  },
+  {
+    posicao: 11,
+    nome: "OSCAR DE BARROS SERRA DORIA DOUTOR",
+    codigo: "911461",
+    top3: 1,
+    top5: 2,
+    top10: 3,
+    posicaoMedia: 14.0,
+    notaFinal: 9.380498673568354,
+    tarefa: 0.48172506118749714,
+    redacao: 0.6965617715617715,
+    leia: 329.7509090909093,
+    speak: 0.215,
+    alura: 5.877068014705882,
+    matific: 3.9016934046345817,
+    khan: 1.5351562499999998,
+    notaTarefa: 6.896602363356579,
+    presenca: 0.869,
+    ifa: 84.0,
+    supervisor: "DINAMARCA DA SILVA"
+  },
+  {
+    posicao: 12,
+    nome: "ALBERTO ANDALO",
+    codigo: "28538",
+    top3: 1,
+    top5: 1,
+    top10: 4,
+    posicaoMedia: 14.7,
+    notaFinal: 9.374955727078323,
+    tarefa: 0.5935617793576473,
+    redacao: 0.45434969853574503,
+    leia: 587.1516925064601,
+    speak: 1.241,
+    alura: 4.970797413793103,
+    matific: null,
+    khan: 3.102470930232558,
+    notaTarefa: 8.479453990823533,
+    presenca: 0.849,
+    ifa: 82.0,
+    supervisor: "DINAMARCA DA SILVA"
+  },
+  {
+    posicao: 13,
+    nome: "CELSO ABBADE MOURAO",
+    codigo: "918337",
+    top3: 1,
+    top5: 1,
+    top10: 3,
+    posicaoMedia: 17.7,
+    notaFinal: 8.590131137160727,
+    tarefa: 0.419045701022053,
+    redacao: 0.61625,
+    leia: 637.790977777778,
+    speak: 0.152,
+    alura: 4.3326348396501455,
+    matific: 5.286676286676287,
+    khan: 2.5631085631085635,
+    notaTarefa: 5.917960478873046,
+    presenca: 0.786,
+    ifa: 83.0,
+    supervisor: "BEN HUR ULISSES DA SILVA"
+  },
+  {
+    posicao: 14,
+    nome: "BENTO ABELAIRA GOMES PROFESSOR",
+    codigo: "918313",
+    top3: 1,
+    top5: 1,
+    top10: 2,
+    posicaoMedia: 15.9,
+    notaFinal: 7.639644532987466,
+    tarefa: 0.5113294652292645,
+    redacao: 0.7366832386363633,
+    leia: 1411.1847159090933,
+    speak: 0.215,
+    alura: 4.2086239270386265,
+    matific: 1.8872889197316678,
+    khan: 2.075472772841194,
+    notaTarefa: 7.31062966624677,
+    presenca: 0.85,
+    ifa: 84.0,
+    supervisor: "ADRIANA APARECIDA CAMPANHOLA DO PRADO"
+  },
+  {
+    posicao: 15,
+    nome: "JOSE FELICIO MIZIARA PROFESSOR",
+    codigo: "28927",
+    top3: 1,
+    top5: 1,
+    top10: 2,
+    posicaoMedia: 17.2,
+    notaFinal: 7.705669205393672,
+    tarefa: 0.6254904498488157,
+    redacao: 0.5624999999999999,
+    leia: 570.6968548387098,
+    speak: 0.368,
+    alura: 4.38114406779661,
+    matific: 1.2394065132654342,
+    khan: 1.2720207253886013,
+    notaTarefa: 8.971545646781008,
+    presenca: 0.868,
+    ifa: 84.0,
+    supervisor: "SOLANGE MARIA DA SILVA"
+  },
+  {
+    posicao: 16,
+    nome: "ADAHIR GUIMARAES FOGACA PROFESSOR",
+    codigo: "28685",
+    top3: 1,
+    top5: 1,
+    top10: 1,
+    posicaoMedia: 16.4,
+    notaFinal: 8.351207636939229,
+    tarefa: 0.45845534410318123,
+    redacao: 0.653206467084397,
+    leia: 415.20119904076773,
+    speak: 0.346,
+    alura: 5.315311418685121,
+    matific: 1.7918414918414918,
+    khan: 6.582902070063695,
+    notaTarefa: 6.356771830189184,
+    presenca: 0.843,
+    ifa: 84.0,
+    supervisor: "JULIANA PAVANI DE PAULA BUENO GUIMARÃES"
+  },
+  {
+    posicao: 17,
+    nome: "NOEMIA BUENO DO VALLE PROFESSORA",
+    codigo: "28551",
+    top3: 0,
+    top5: 1,
+    top10: 5,
+    posicaoMedia: 14.4,
+    notaFinal: 7.395291488095238,
+    tarefa: 0.5354645013854645,
+    redacao: 0.7516420361247949,
+    leia: 775.3188095238104,
+    speak: 0.248,
+    alura: 3.4276785714285714,
+    matific: 3.1298701298701306,
+    khan: null,
+    notaTarefa: 7.6494928769352075,
+    presenca: 0.89,
+    ifa: 84.0,
+    supervisor: "LUCIANE GUIDUCE NOGUEIRA"
+  },
+  {
+    posicao: 18,
+    nome: "MARIA DE LOURDES MURAD DE CAMARGO PROFESSORA",
+    codigo: "907169",
+    top3: 0,
+    top5: 1,
+    top10: 4,
+    posicaoMedia: 14.3,
+    notaFinal: 9.131881594202898,
+    tarefa: 0.5329614520801885,
+    redacao: 0.6073222565684579,
+    leia: 533.3895054095831,
+    speak: 0.159,
+    alura: 5.813545150501672,
+    matific: 3.669055313568451,
+    khan: null,
+    notaTarefa: 7.613734315431266,
+    presenca: 0.875,
+    ifa: 84.0,
+    supervisor: null
+  },
+  {
+    posicao: 19,
+    nome: "DINORATH DO VALLE PROFESSORA",
+    codigo: "436239",
+    top3: 0,
+    top5: 1,
+    top10: 3,
+    posicaoMedia: 11.6,
+    notaFinal: 8.175854572753696,
+    tarefa: 0.6113991422514657,
+    redacao: 0.673817920585162,
+    leia: 619.7283699059557,
+    speak: 0.255,
+    alura: 5.446717271293376,
+    matific: 1.9332096474953622,
+    khan: 3.2394519356241838,
+    notaTarefa: 8.75925178558556,
+    presenca: 0.885,
+    ifa: 82.9,
+    supervisor: "JOSEFA BASILIO DA SILVEIRA"
+  },
+  {
+    posicao: 20,
+    nome: "FRANCISCO PURITA PROFESSOR",
+    codigo: "28617",
+    top3: 0,
+    top5: 2,
+    top10: 2,
+    posicaoMedia: 19.3,
+    notaFinal: 6.694762536585365,
+    tarefa: 0.4740333005527253,
+    redacao: 0.5974973275482612,
+    leia: 444.57481481481506,
+    speak: 0.142,
+    alura: 6.043035714285714,
+    matific: 1.1664544605721077,
+    khan: 1.2575757575757573,
+    notaTarefa: 6.792951149860919,
+    presenca: 0.898,
+    ifa: 84.0,
+    supervisor: "WAGNER HENRIQUE DA SILVA"
+  },
+  {
+    posicao: 21,
+    nome: "DARCY FEDERICI PACHECO PROFESSOR",
+    codigo: "914411",
+    top3: 0,
+    top5: 1,
+    top10: 2,
+    posicaoMedia: 16.1,
+    notaFinal: 8.403347158342838,
+    tarefa: 0.4523520753648939,
+    redacao: 0.6385256069466596,
+    leia: 361.7472748538012,
+    speak: 0.178,
+    alura: 5.326669269230769,
+    matific: 3.6460348162475817,
+    khan: 2.153058361391694,
+    notaTarefa: 6.5615756994250445,
+    presenca: 0.886,
+    ifa: 83.0,
+    supervisor: "EDMAR MONTELLI"
+  },
+  {
+    posicao: 22,
+    nome: "AURELIANO MENDONCA PROFESSOR",
+    codigo: "35828",
+    top3: 0,
+    top5: 1,
+    top10: 2,
+    posicaoMedia: 16.3,
+    notaFinal: 8.24540966435268,
+    tarefa: 0.46203497555970974,
+    redacao: 0.7566734279918866,
+    leia: 472.4719294117647,
+    speak: 0.301,
+    alura: 4.678784013605442,
+    matific: 0.8029465930018416,
+    khan: 3.7884997516145056,
+    notaTarefa: 6.611468704315295,
+    presenca: 0.856,
+    ifa: 84.0,
+    supervisor: "DULCE REGINA DE CARVALHO CENEVIVA"
+  },
+  {
+    posicao: 23,
+    nome: "WALDEMIRO NAFFAH DOUTOR",
+    codigo: "908150",
+    top3: 0,
+    top5: 1,
+    top10: 2,
+    posicaoMedia: 18.2,
+    notaFinal: 6.650598884861258,
+    tarefa: 0.4750905966259365,
+    redacao: 0.5857507470119521,
+    leia: 778.8219023904384,
+    speak: 0.136,
+    alura: 5.772991741741742,
+    matific: 1.3223076923076924,
+    khan: 2.9776579352850545,
+    notaTarefa: 6.842996597426609,
+    presenca: 0.857,
+    ifa: 82.6,
+    supervisor: "ANDERSON RIZZUTTI PRESTES"
+  },
+  {
+    posicao: 24,
+    nome: "ALZIRA VALLE ROLEMBERG PROFESSORA",
+    codigo: "908149",
+    top3: 0,
+    top5: 0,
+    top10: 2,
+    posicaoMedia: 15.0,
+    notaFinal: 8.217141637459823,
+    tarefa: 0.49404756658316457,
+    redacao: 0.727008517495396,
+    leia: 622.1078360957637,
+    speak: 0.18,
+    alura: 4.2370049504950495,
+    matific: 2.399888455103179,
+    khan: 3.031898041474653,
+    notaTarefa: 7.092536018612051,
+    presenca: 0.858,
+    ifa: 82.8,
+    supervisor: "ADRIANA APARECIDA CAMPANHOLA DO PRADO"
+  },
+  {
+    posicao: 25,
+    nome: "FRANCISCO MARQUES PINTO",
+    codigo: "27820",
+    top3: 0,
+    top5: 0,
+    top10: 2,
+    posicaoMedia: 17.0,
+    notaFinal: 8.083376002071947,
+    tarefa: 0.5129565566455083,
+    redacao: 0.4883429526123937,
+    leia: 514.9948481166466,
+    speak: 0.396,
+    alura: 4.858601485148514,
+    matific: 1.8935959087092593,
+    khan: 4.533717456252667,
+    notaTarefa: 7.317602016333853,
+    presenca: 0.83,
+    ifa: 83.4,
+    supervisor: "MAURA CRISTINA DA SILVA"
+  },
+  {
+    posicao: 26,
+    nome: "SONIA MARIA VENTURELLI PROFESSORA",
+    codigo: "919688",
+    top3: 0,
+    top5: 0,
+    top10: 1,
+    posicaoMedia: 19.6,
+    notaFinal: 6.602709252124444,
+    tarefa: 0.46192383019918987,
+    redacao: 0.6565609452736317,
+    leia: 364.5728358208954,
+    speak: 0.138,
+    alura: 5.4352978187919465,
+    matific: 2.576282051282052,
+    khan: 1.6246031746031744,
+    notaTarefa: 6.686153225457613,
+    presenca: 0.859,
+    ifa: 82.4,
+    supervisor: "DULCE REGINA DE CARVALHO CENEVIVA"
+  },
+  {
+    posicao: 27,
+    nome: "JOAO DEOCLECIO DA SILVA RAMOS PROFESSOR DOUTOR",
+    codigo: "28859",
+    top3: 0,
+    top5: 0,
+    top10: 1,
+    posicaoMedia: 23.1,
+    notaFinal: 6.200664777184209,
+    tarefa: 0.3803057901380965,
+    redacao: 0.406425702811245,
+    leia: 407.7591325301205,
+    speak: 0.424,
+    alura: 2.6244103773584904,
+    matific: 1.59992486851991,
+    khan: 2.1935483870967736,
+    notaTarefa: 5.441861932413577,
+    presenca: 0.848,
+    ifa: 82.7,
+    supervisor: "WAGNER HENRIQUE DA SILVA"
+  },
+  {
+    posicao: 28,
+    nome: "ANTONIO DE BARROS SERRA PROFESSOR",
+    codigo: "28769",
+    top3: 0,
+    top5: 0,
+    top10: 0,
+    posicaoMedia: 20.2,
+    notaFinal: 7.732457692847344,
+    tarefa: 0.42973861369722516,
+    redacao: 0.5016104714912281,
+    leia: 504.34699561403545,
+    speak: 0.147,
+    alura: 5.420215201465202,
+    matific: 2.1036851566512587,
+    khan: 3.0904829545454544,
+    notaTarefa: 6.184281741532726,
+    presenca: 0.817,
+    ifa: 82.9,
+    supervisor: "SANDRA REGINA PARREIRA RIBEIRO"
+  }
+];
 
-    <nav class="navegacao" aria-label="Navegação principal">
-      <ul class="container menu">
-        <li><button type="button" class="menu-botao ativo" data-view="geral" aria-current="page">Visão geral</button></li>
-        <li><button type="button" class="menu-botao" data-view="supervisores">Supervisores</button></li>
-        <li><button type="button" class="menu-botao" data-view="escolas">Escolas</button></li>
-        <li><button type="button" class="menu-botao" data-view="plataformas">Plataformas</button></li>
-        <li><button type="button" class="menu-botao" data-view="ifa">Aluno Presente / IFA</button></li>
-        <li><button type="button" class="menu-botao" data-view="graficos">Gráficos</button></li>
-        <li><button type="button" class="menu-botao" data-view="sobre">Sobre os dados</button></li>
-      </ul>
-    </nav>
-  </header>
-
-  <main id="conteudo" class="container">
-
-    <aside class="aviso" aria-label="Aviso institucional">
-      <p>
-        <strong>Painel exclusivo das escolas regulares.</strong>
-        Não inclui outras modalidades de ensino. Uso interno da URE São José do Rio Preto, para apoio à gestão,
-        ao acompanhamento pedagógico e ao planejamento.
-      </p>
-      <p>
-        Levantamento da <strong>1ª semana até a semana 37</strong>. As projeções de IFA consideram as
-        <strong>semanas 38 a 42</strong>, com encerramento previsto na segunda semana de novembro.
-      </p>
-    </aside>
-
-    <!-- ========== VISÃO GERAL ========== -->
-    <section id="view-geral" class="visao ativa" aria-labelledby="titulo-geral">
-      <h2 id="titulo-geral">Visão geral</h2>
-      <p class="descricao">Panorama das escolas regulares monitoradas: desempenho multissistema, presença escolar e IFA.</p>
-
-      <section class="painel" aria-labelledby="titulo-top5">
-        <header class="painel-cabecalho">
-          <h3 id="titulo-top5">Top 5 do ranking geral</h3>
-          <p>Desempenho multissistema até a semana 37.</p>
-        </header>
-        <div id="top5-ranking" class="top5"></div>
-      </section>
-
-      <section class="indicadores" aria-label="Indicadores gerais">
-        <article class="indicador">
-          <h3>Escolas regulares monitoradas</h3>
-          <p class="valor" id="kpi-escolas">—</p>
-          <p class="apoio">Escolas presentes na base do painel</p>
-        </article>
-        <article class="indicador">
-          <h3>IFA da URE</h3>
-          <p class="valor">83,3%</p>
-          <p class="apoio">Índice de presença anual de referência</p>
-        </article>
-        <article class="indicador">
-          <h3>Projeção de fechamento</h3>
-          <p class="valor" id="kpi-projecao">—</p>
-          <p class="apoio">Média de presença prevista na semana 42</p>
-        </article>
-        <article class="indicador">
-          <h3>1º lugar — ranking geral</h3>
-          <p class="valor" id="kpi-ranking">—</p>
-          <p class="apoio">Desempenho multissistema</p>
-        </article>
-        <article class="indicador">
-          <h3>Maior nota final</h3>
-          <p class="valor" id="kpi-nota">—</p>
-          <p class="apoio">Resultado consolidado</p>
-        </article>
-        <article class="indicador">
-          <h3>Maior presença</h3>
-          <p class="valor" id="kpi-presenca">—</p>
-          <p class="apoio">Presença consolidada até o último lançamento</p>
-        </article>
-        <article class="indicador">
-          <h3>Dentro do IFA</h3>
-          <p class="valor" id="kpi-ifa">—</p>
-          <p class="apoio">Escolas que já atingiram ou superaram o IFA</p>
-        </article>
-      </section>
-
-      <section class="painel" aria-labelledby="titulo-projecao">
-        <header class="painel-cabecalho">
-          <h3 id="titulo-projecao">Próximas semanas até o fim do período</h3>
-          <p>Semanas 38 a 42. O status muda automaticamente quando a presença é lançada.</p>
-        </header>
-        <ol id="linha-projecao" class="linha-projecao"></ol>
-      </section>
-
-      <section class="painel" aria-labelledby="titulo-resumo">
-        <header class="painel-cabecalho">
-          <h3 id="titulo-resumo">Resumo das escolas</h3>
-          <p>Ordenado pelo ranking geral. Selecione a escola para ver os detalhes.</p>
-        </header>
-        <div class="tabela-rolagem" tabindex="0" role="region" aria-label="Tabela: resumo das escolas">
-          <table>
-            <caption class="sr-only">Resumo das escolas regulares monitoradas pela URE</caption>
-            <thead>
-              <tr>
-                <th scope="col">Posição</th>
-                <th scope="col">Escola</th>
-                <th scope="col">Nota final</th>
-                <th scope="col">Presença</th>
-                <th scope="col">IFA</th>
-                <th scope="col">Situação</th>
-              </tr>
-            </thead>
-            <tbody id="tabela-resumo"></tbody>
-          </table>
-        </div>
-      </section>
-    </section>
-
-    <!-- ========== SUPERVISORES ========== -->
-    <section id="view-supervisores" class="visao" aria-labelledby="titulo-supervisores">
-      <h2 id="titulo-supervisores">Ranking dos supervisores</h2>
-      <p class="descricao">
-        Classificação pela média da nota final das escolas regulares de cada supervisor(a), com desempate pela presença média.
-        Escolas sem supervisor(a) informado(a) na base não entram neste ranking.
-      </p>
-
-      <section class="painel" aria-labelledby="titulo-tabela-supervisores">
-        <header class="painel-cabecalho">
-          <h3 id="titulo-tabela-supervisores">Supervisores por desempenho das escolas</h3>
-        </header>
-        <div class="tabela-rolagem" tabindex="0" role="region" aria-label="Tabela: ranking dos supervisores">
-          <table>
-            <caption class="sr-only">Ranking dos supervisores a partir do desempenho das suas escolas</caption>
-            <thead>
-              <tr>
-                <th scope="col">Posição</th>
-                <th scope="col">Supervisor(a)</th>
-                <th scope="col">Escolas</th>
-                <th scope="col">Nota média</th>
-                <th scope="col">Presença média</th>
-                <th scope="col">Dentro do IFA</th>
-              </tr>
-            </thead>
-            <tbody id="tabela-supervisores"></tbody>
-          </table>
-        </div>
-      </section>
-    </section>
-
-    <!-- ========== ESCOLAS ========== -->
-    <section id="view-escolas" class="visao" aria-labelledby="titulo-escolas">
-      <h2 id="titulo-escolas">Escolas</h2>
-      <p class="descricao">Consulte os indicadores por escola, organize a tabela e acesse a ficha individual.</p>
-
-      <form class="filtros" aria-label="Filtros das escolas">
-        <div class="campo">
-          <label for="busca-escola">Buscar escola</label>
-          <input type="search" id="busca-escola" name="busca-escola" placeholder="Nome ou código da escola">
-        </div>
-        <div class="campo">
-          <label for="filtro-supervisor">Supervisor(a)</label>
-          <select id="filtro-supervisor" name="filtro-supervisor">
-            <option value="">Todos</option>
-          </select>
-        </div>
-        <div class="campo">
-          <label for="ordenar-escolas">Ordenar por</label>
-          <select id="ordenar-escolas" name="ordenar-escolas">
-            <option value="ranking">Posição no ranking geral</option>
-            <option value="nota">Maior nota final</option>
-            <option value="presenca">Maior presença</option>
-            <option value="ifa">Maior IFA</option>
-            <option value="nome">Nome da escola</option>
-          </select>
-        </div>
-        <div class="campo campo-botao">
-          <button type="reset" class="botao-secundario" id="limpar-filtros">Limpar filtros</button>
-        </div>
-      </form>
-
-      <section class="painel" aria-labelledby="titulo-classificacao">
-        <header class="painel-cabecalho">
-          <h3 id="titulo-classificacao">Classificação das escolas</h3>
-          <p id="contador-escolas" aria-live="polite">—</p>
-        </header>
-        <div class="tabela-rolagem" tabindex="0" role="region" aria-label="Tabela: classificação das escolas">
-          <table>
-            <caption class="sr-only">Classificação das escolas por desempenho, presença e IFA</caption>
-            <thead>
-              <tr>
-                <th scope="col">Posição</th>
-                <th scope="col">Escola</th>
-                <th scope="col">Nota final</th>
-                <th scope="col">Presença</th>
-                <th scope="col">IFA</th>
-                <th scope="col">Supervisor(a)</th>
-                <th scope="col">Situação</th>
-              </tr>
-            </thead>
-            <tbody id="tabela-escolas"></tbody>
-          </table>
-        </div>
-      </section>
-    </section>
-
-    <!-- ========== PLATAFORMAS ========== -->
-    <section id="view-plataformas" class="visao" aria-labelledby="titulo-plataformas">
-      <h2 id="titulo-plataformas">Plataformas</h2>
-      <p class="descricao">Resultado das escolas em cada plataforma, para identificar pontos fortes e oportunidades de apoio.</p>
-
-      <div class="plataformas-controles">
-        <div id="abas-plataforma" class="abas-plataforma" role="group" aria-label="Escolha a plataforma"></div>
-        <div class="campo">
-          <label for="busca-plataforma">Buscar escola</label>
-          <input type="search" id="busca-plataforma" name="busca-plataforma" placeholder="Nome ou código da escola">
-        </div>
-      </div>
-
-      <section class="painel" aria-labelledby="titulo-plataforma-selecionada">
-        <header class="painel-cabecalho">
-          <h3 id="titulo-plataforma-selecionada">Tarefa SP</h3>
-          <p id="descricao-plataforma">Escolas ordenadas pelo indicador da plataforma selecionada.</p>
-        </header>
-        <p id="resumo-plataforma" class="resumo-plataforma" aria-live="polite"></p>
-        <ol id="barras-plataforma" class="barras"></ol>
-        <p id="sem-dado-plataforma" class="sem-dado"></p>
-      </section>
-    </section>
-
-    <!-- ========== ALUNO PRESENTE / IFA ========== -->
-    <section id="view-ifa" class="visao" aria-labelledby="titulo-ifa">
-      <h2 id="titulo-ifa">Aluno Presente / IFA</h2>
-      <p class="descricao">Presença consolidada, IFA de cada escola e média necessária nas semanas 38 a 42 para atingir a meta.</p>
-
-      <section class="calculadora" aria-labelledby="titulo-calculadora">
-        <header class="calculadora-cabecalho">
-          <h3 id="titulo-calculadora">Lançamento Semanal de Presença</h3>
-          <p>Informe a presença da semana. Utilize os filtros para localizar rapidamente as escolas desejadas.</p>
-        </header>
-
-        <form id="formulario-ifa" aria-label="Lançamento semanal do Aluno Presente">
-          <fieldset>
-            <legend class="sr-only">Lançamento da semana</legend>
-            <p id="status-sincronizacao" class="status-sincronizacao" role="status"></p>
-
-            <div class="calculadora-controles">
-              <div class="campo">
-                <label for="semana-calculadora">Semana de Referência</label>
-                <select id="semana-calculadora" name="semana-calculadora">
-                  <option value="38">Semana 38</option>
-                  <option value="39">Semana 39</option>
-                  <option value="40">Semana 40</option>
-                  <option value="41">Semana 41</option>
-                  <option value="42">Semana 42</option>
-                </select>
-              </div>
-              <div class="campo">
-                <label for="responsavel-lancamento">Filtrar por Supervisor(a)</label>
-                <select id="responsavel-lancamento" name="responsavel-lancamento">
-                  <!-- Preenchido via JS -->
-                </select>
-              </div>
-              <div class="campo">
-                <label for="busca-calculadora">Buscar Escola</label>
-                <input type="search" id="busca-calculadora" placeholder="Nome ou código...">
-              </div>
-            </div>
-
-            <div class="lancamentos-container">
-              <div class="lancamentos-header" aria-hidden="true">
-                <span>Unidade Escolar</span>
-                <span>Presença (%)</span>
-              </div>
-              <div class="lancamentos-lista" id="lancamento-grid">
-                <!-- Escolas injetadas aqui via JS -->
-              </div>
-            </div>
-
-            <div class="acoes-calculadora">
-              <div class="acoes-secundarias">
-                <button type="button" class="botao-secundario" id="exportar-lancamentos">Exportar Backup JSON</button>
-                <button type="button" class="botao-secundario botao-perigo" id="restaurar-base">Restaurar Original</button>
-              </div>
-              <button type="button" class="botao-primario botao-salvar" id="calcular-semana">Salvar Lançamentos</button>
-            </div>
-          </fieldset>
-        </form>
-      </section>
-
-      <aside class="orientacao" aria-label="Como interpretar a situação do IFA">
-        <h3>Como interpretar a situação</h3>
-        <ul>
-          <li><strong>Dentro do IFA:</strong> a escola já atingiu ou superou seu IFA com os dados lançados.</li>
-          <li><strong>Em acompanhamento:</strong> ainda é possível atingir o IFA, desde que a escola alcance a média indicada até a semana 42.</li>
-          <li><strong>Fora do alcance da meta:</strong> mesmo com 100% de presença nas semanas restantes, o IFA não será alcançado no período.</li>
-        </ul>
-      </aside>
-
-      <form class="filtros" aria-label="Filtros de presença e IFA">
-        <div class="campo">
-          <label for="busca-ifa">Buscar escola</label>
-          <input type="search" id="busca-ifa" name="busca-ifa" placeholder="Nome ou código da escola">
-        </div>
-        <div class="campo">
-          <label for="filtro-situacao-ifa">Situação</label>
-          <select id="filtro-situacao-ifa" name="filtro-situacao-ifa">
-            <option value="">Todas</option>
-            <option value="Dentro do IFA">Dentro do IFA</option>
-            <option value="Em acompanhamento">Em acompanhamento</option>
-            <option value="Fora do alcance da meta">Fora do alcance da meta</option>
-          </select>
-        </div>
-        <div class="campo">
-          <label for="ordenar-ifa">Ordenar por</label>
-          <select id="ordenar-ifa" name="ordenar-ifa">
-            <option value="presenca">Maior presença</option>
-            <option value="ifa">Maior IFA</option>
-            <option value="necessaria">Menor média necessária</option>
-            <option value="nome">Nome da escola</option>
-          </select>
-        </div>
-        <div class="campo campo-botao">
-          <button type="reset" class="botao-secundario" id="limpar-ifa">Limpar filtros</button>
-        </div>
-      </form>
-
-      <section class="painel" aria-labelledby="titulo-presenca-ifa">
-        <header class="painel-cabecalho">
-          <h3 id="titulo-presenca-ifa">Presença e IFA por escola</h3>
-          <p id="contador-ifa" aria-live="polite">—</p>
-        </header>
-        <div class="tabela-rolagem" tabindex="0" role="region" aria-label="Tabela: presença e IFA por escola">
-          <table>
-            <caption class="sr-only">Presença consolidada, IFA e média necessária por escola</caption>
-            <thead>
-              <tr>
-                <th scope="col">Escola</th>
-                <th scope="col">Presença consolidada</th>
-                <th scope="col">IFA da escola</th>
-                <th scope="col">IFA da URE</th>
-                <th scope="col">Média necessária até a semana 42</th>
-                <th scope="col">Situação</th>
-              </tr>
-            </thead>
-            <tbody id="tabela-ifa"></tbody>
-          </table>
-        </div>
-      </section>
-    </section>
-
-    <!-- ========== GRÁFICOS (gerados pelo graficos.js) ========== -->
-    <section id="view-graficos" class="visao" aria-labelledby="titulo-graficos">
-      <h2 id="titulo-graficos">Gráficos</h2>
-      <p class="descricao">
-        Visualizações prontas das escolas regulares. Baixe cada gráfico em PNG (slides e relatórios)
-        ou em SVG (alta qualidade para impressão). Os gráficos acompanham os lançamentos semanais.
-      </p>
-      <p><button type="button" class="botao-primario" id="baixar-todos">Baixar todos os gráficos (PNG)</button></p>
-      <div id="area-graficos"></div>
-    </section>
-
-    <!-- ========== SOBRE OS DADOS ========== -->
-    <section id="view-sobre" class="visao" aria-labelledby="titulo-sobre">
-      <h2 id="titulo-sobre">Sobre os dados</h2>
-
-      <article class="painel">
-        <h3>Escopo</h3>
-        <p>Este painel considera <strong>somente escolas regulares</strong> da URE São José do Rio Preto.</p>
-
-        <h3>Período analisado</h3>
-        <p>
-          Levantamento da <strong>1ª semana até a semana 37</strong>. As projeções de IFA consideram as
-          <strong>semanas 38 a 42</strong>, com encerramento previsto na segunda semana de novembro.
-        </p>
-
-        <h3>Finalidade</h3>
-        <p>
-          Uso interno da Unidade Regional de Ensino, para organizar informações já levantadas e apoiar o acompanhamento
-          pedagógico, a supervisão e o planejamento de ações.
-        </p>
-
-        <h3>Indicadores apresentados</h3>
-        <ul>
-          <li>Ranking geral de desempenho multissistema e Top 5.</li>
-          <li>Ranking dos supervisores, pela média da nota final das suas escolas.</li>
-          <li>Resultados por plataforma: Tarefa SP, Redação SP, Leia SP, SPeak, Alura, Matific e Khan Academy.</li>
-          <li>Presença escolar consolidada e IFA por escola; IFA de referência da URE: 83,3%.</li>
-          <li>Média necessária e projeção de fechamento até a semana 42.</li>
-        </ul>
-
-        <h3>Como a projeção é calculada</h3>
-        <p>
-          Semanas ainda sem lançamento repetem a média de presença atual da escola. Ao lançar uma semana,
-          todos os indicadores são recalculados automaticamente.
-        </p>
-
-        <h3>Observações</h3>
-        <p>
-          Resultados ausentes aparecem como “Sem dado” e não são tratados como zero. As projeções apoiam a gestão
-          e não substituem os resultados oficiais da Secretaria da Educação do Estado de São Paulo.
-        </p>
-      </article>
-    </section>
-
-  </main>
-
-  <!-- ========== RODAPÉ ========== -->
-  <footer class="rodape">
-    <div class="container">
-      <p>
-        <strong>Monitoramento Escolar — Escolas Regulares — URE São José do Rio Preto.</strong><br>
-        Levantamento até a semana 37. Projeção de IFA para as semanas 38 a 42.
-      </p>
-      <p class="rodape-pequeno">
-        Desenvolvido por Luciano Julio da Silva — PEC Desenvolvimento Curricular de Tecnologia da URE de São José do Rio Preto,
-        com apoio de inteligência artificial (Perplexity, 2026).
-      </p>
-    </div>
-  </footer>
-
-  <!-- Ficha individual da escola (preenchida pelo app.js) -->
-  <dialog id="modal-escola" class="modal" aria-labelledby="modal-titulo">
-    <article>
-      <header class="modal-cabecalho">
-        <h2 id="modal-titulo">Escola</h2>
-        <button type="button" class="modal-fechar" id="fechar-modal" aria-label="Fechar ficha da escola">×</button>
-      </header>
-      <div id="modal-conteudo" class="modal-conteudo"></div>
-    </article>
-  </dialog>
-
-  <!-- ========================================== -->
-  <!-- SDKs do Firebase (Compat) para app.js      -->
-  <!-- ========================================== -->
-  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
-
-  <script src="dados.js"></script>
-  <script src="app.js"></script>
-  <script src="graficos.js"></script>
-</body>
-</html>
+const LANCAMENTOS_SEMANAIS = {
+  38: {},
+  39: {},
+  40: {},
+  41: {},
+  42: {}
+};
