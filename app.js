@@ -9,7 +9,7 @@
    4. Rankings (Top 5 e supervisores)
    5. Renderização das telas
    6. Calculadora semanal
-   7. Ficha da escola
+   7. Fichas
    8. Inicialização
 
    Convenção: presença e IFA ficam em PONTOS PERCENTUAIS (88,6 = 88,6%).
@@ -189,24 +189,48 @@ function rankingSupervisores() {
    5. Renderização das telas
    ========================= */
 
-const botaoEscola = escola =>
-  `<button type="button" class="escola-link" data-codigo="${escola.codigo}">${escapar(nomeCompleto(escola))}</button>`;
+// O atributo data-contexto define qual ficha abre: ranking, plataforma, ifa ou escolas.
+const botaoEscola = (escola, contexto = "escolas") =>
+  `<button type="button" class="escola-link" data-codigo="${escola.codigo}" data-contexto="${contexto}">${escapar(nomeCompleto(escola))}</button>`;
+
+const botaoSupervisor = nome => nome
+  ? `<button type="button" class="supervisor-link" data-supervisor="${escapar(nome)}">${escapar(nome)}</button>`
+  : '<span class="sem-dado">Sem dado</span>';
 
 function renderizarTop5() {
-  const lista = $("#top5-ranking");
-  if (!lista) return;
-  lista.innerHTML = rankingTop5().map(e => `
-    <li class="top5-item ${e.posicao <= 3 ? `destaque-${e.posicao}` : ""}">
-      <span class="top5-posicao" aria-label="${e.posicao}º lugar">${e.posicao}º</span>
-      <div>${botaoEscola(e)}<p>Nota final ${numero(e.notaFinal)} · Presença ${formatarPontos(presencaAtual(e).media)}</p></div>
+  const area = $("#top5-ranking");
+  if (!area) return;
+  const top = rankingTop5();
+
+  // Pódio: 1º, 2º e 3º (o CSS posiciona o 1º no centro; a ordem de leitura continua 1º, 2º, 3º)
+  const podio = top.slice(0, 3).map((e, i) => `
+    <li class="podio-item podio-${i + 1}">
+      <span class="sr-only">${i + 1}º lugar</span>
+      <button type="button" class="escola-link" data-codigo="${e.codigo}" data-contexto="ranking">${escapar(e.nome)}</button>
+      <small>Código ${e.codigo}</small>
+      <dl class="podio-dados">
+        <div><dt>Nota final</dt><dd>${numero(e.notaFinal)}</dd></div>
+        <div><dt>Presença</dt><dd>${formatarPontos(presencaAtual(e).media, 1)}</dd></div>
+      </dl>
+      <span class="podio-degrau" aria-hidden="true">${i + 1}º</span>
     </li>`).join("");
+
+  // 4º e 5º lugares em linhas
+  const demais = top.slice(3).map((e, i) => `
+    <li class="top-linha">
+      <span class="top-num">${i + 4}º</span>
+      <div>${botaoEscola(e, "ranking")}</div>
+      <span class="top-nota">Nota ${numero(e.notaFinal)}</span>
+    </li>`).join("");
+
+  area.innerHTML = `<ol class="podio">${podio}</ol><ol class="top-lista" start="4">${demais}</ol>`;
 }
 
 function renderizarSupervisores() {
   preencherTabela("#tabela-supervisores", rankingSupervisores().map(s => `
     <tr>
       <td>${s.posicao}º</td>
-      <td>${escapar(s.nome)}</td>
+      <td>${botaoSupervisor(s.nome)}</td>
       <td>${s.escolas.length}</td>
       <td>${numero(s.notaMedia)}</td>
       <td>${formatarPontos(s.presencaMedia)}</td>
@@ -236,17 +260,18 @@ function renderizarVisaoGeral() {
 
   const kpis = {
     "#kpi-escolas": ESCOLAS.length,
-    "#kpi-ranking": ESCOLAS[0].nome,
-    "#kpi-nota": maisNota.nome,
-    "#kpi-presenca": maisPresenca.nome,
     "#kpi-ifa": `${dentro} de ${ESCOLAS.length}`
   };
   Object.entries(kpis).forEach(([id, texto]) => { if ($(id)) $(id).textContent = texto; });
 
+  // Destaques que são escolas: botões clicáveis
+  [["#kpi-ranking", ESCOLAS[0], "ranking"], ["#kpi-nota", maisNota, "ranking"], ["#kpi-presenca", maisPresenca, "ifa"]]
+    .forEach(([id, escola, contexto]) => { if ($(id)) $(id).innerHTML = botaoEscola(escola, contexto); });
+
   preencherTabela("#tabela-resumo", [...ESCOLAS].sort((a, b) => a.posicao - b.posicao).map(e => `
     <tr>
       <td>${e.posicao}º</td>
-      <td>${botaoEscola(e)}</td>
+      <td>${botaoEscola(e, "ranking")}</td>
       <td>${numero(e.notaFinal)}</td>
       <td>${formatarPontos(presencaAtual(e).media)}</td>
       <td>${formatarPontos(e.ifa)}</td>
@@ -293,29 +318,63 @@ function renderizarEscolas() {
       <td>${numero(e.notaFinal)}</td>
       <td>${formatarPontos(presencaAtual(e).media)}</td>
       <td>${formatarPontos(e.ifa)}</td>
-      <td>${e.supervisor ? escapar(e.supervisor) : '<span class="sem-dado">Sem dado</span>'}</td>
+      <td>${botaoSupervisor(e.supervisor)}</td>
       <td>${seloSituacao(situacaoIFA(e))}</td>
     </tr>`), 7);
 }
 
+// Plataforma exibida no momento (as abas alteram este valor)
+let plataformaAtual = "tarefa";
+
+function montarAbasPlataforma() {
+  const area = $("#abas-plataforma");
+  area.innerHTML = Object.entries(PLATAFORMAS).map(([chave, p]) => `
+    <button type="button" class="aba-plataforma" data-chave="${chave}"
+            aria-pressed="${chave === plataformaAtual}">${p.nome}</button>`).join("");
+
+  area.addEventListener("click", evento => {
+    const botao = evento.target.closest(".aba-plataforma");
+    if (!botao) return;
+    plataformaAtual = botao.dataset.chave;
+    $$(".aba-plataforma", area).forEach(b => b.setAttribute("aria-pressed", b === botao));
+    renderizarPlataformas();
+  });
+}
+
+// Ranking da plataforma em barras proporcionais ao melhor resultado
 function renderizarPlataformas() {
-  const config = PLATAFORMAS[$("#selecionar-plataforma").value];
+  const config = PLATAFORMAS[plataformaAtual];
   const busca = $("#busca-plataforma").value.trim().toLowerCase();
+  const campo = config.campo;
+
+  const ordenadas = ESCOLAS.filter(e => !semValor(e[campo])).sort((a, b) => b[campo] - a[campo]);
+  const maximo = ordenadas.length ? ordenadas[0][campo] : 0;
+  const semResultado = ESCOLAS.filter(e => semValor(e[campo]));
 
   $("#titulo-plataforma-selecionada").textContent = config.nome;
-  $("#descricao-plataforma").textContent =
-    "Escolas ordenadas pelo indicador da plataforma selecionada. Escolas sem resultado não aparecem na lista.";
+  $("#descricao-plataforma").textContent = "Barras proporcionais ao melhor resultado. Selecione a escola para ver a ficha.";
+  $("#resumo-plataforma").textContent = ordenadas.length
+    ? `${ordenadas.length} de ${ESCOLAS.length} escolas com resultado · Média da URE: ${numero(media(ordenadas, e => e[campo]), config.casas)} · Melhor resultado: ${numero(maximo, config.casas)}`
+    : "Nenhuma escola com resultado nesta plataforma.";
 
-  const lista = ESCOLAS
-    .filter(e => correspondeBusca(e, busca) && !semValor(e[config.campo]))
-    .sort((a, b) => b[config.campo] - a[config.campo]);
+  $("#barras-plataforma").innerHTML = ordenadas
+    .map((e, i) => ({ e, n: i + 1 }))
+    .filter(({ e }) => correspondeBusca(e, busca))
+    .map(({ e, n }) => `
+      <li class="barra ${n <= 3 ? `barra-${n}` : ""}">
+        <span class="barra-pos">${n}º</span>
+        <div class="barra-corpo">
+          ${botaoEscola(e, "plataforma")}
+          <div class="barra-trilho" aria-hidden="true">
+            <span class="barra-fill" style="width:${maximo > 0 ? (e[campo] / maximo * 100).toFixed(1) : 0}%"></span>
+          </div>
+        </div>
+        <strong class="barra-valor">${numero(e[campo], config.casas)}</strong>
+      </li>`).join("");
 
-  preencherTabela("#tabela-plataforma", lista.map((e, i) => `
-    <tr>
-      <td>${i + 1}º</td>
-      <td>${escapar(nomeCompleto(e))}</td>
-      <td>${numero(e[config.campo], config.casas)}</td>
-    </tr>`), 3);
+  $("#sem-dado-plataforma").innerHTML = semResultado.length
+    ? `Sem resultado nesta plataforma: ${semResultado.map(e => botaoEscola(e, "plataforma")).join("; ")}.`
+    : "";
 }
 
 function renderizarIFA() {
@@ -332,7 +391,7 @@ function renderizarIFA() {
     const atencao = sit === "Em acompanhamento" && necessaria >= LIMITE_ATENCAO;
     return `
     <tr class="${atencao ? "destaque-atencao" : ""}">
-      <td>${escapar(nomeCompleto(e))}</td>
+      <td>${botaoEscola(e, "ifa")}</td>
       <td>${formatarPontos(presencaAtual(e).media)}</td>
       <td>${formatarPontos(e.ifa)}</td>
       <td>${formatarPontos(CONFIG.ifaURE)}</td>
@@ -403,50 +462,142 @@ function restaurarBase() {
 }
 
 /* =========================
-   7. Ficha da escola
+   7. Fichas (modal): o conteúdo muda conforme o local do clique
    ========================= */
 
-const indicadorFicha = (rotulo, valor) =>
-  `<article class="ficha-indicador"><span>${rotulo}</span><strong>${valor}</strong></article>`;
+// Monta uma tabela acessível; as células aceitam HTML.
+const tabela = (legenda, cabecalhos, linhas) => `
+  <div class="tabela-rolagem" tabindex="0" role="region" aria-label="${escapar(legenda)}">
+    <table>
+      <caption class="sr-only">${escapar(legenda)}</caption>
+      <thead><tr>${cabecalhos.map(c => `<th scope="col">${c}</th>`).join("")}</tr></thead>
+      <tbody>${linhas.map(l => `<tr>${l.map(c => `<td>${c}</td>`).join("")}</tr>`).join("")}</tbody>
+    </table>
+  </div>`;
 
-function abrirFicha(codigo) {
+// Posição, média e melhor resultado de uma escola em uma plataforma
+function estatisticaPlataforma(chave, escola) {
+  const campo = PLATAFORMAS[chave].campo;
+  const validas = ESCOLAS.filter(e => !semValor(e[campo])).sort((a, b) => b[campo] - a[campo]);
+  const indice = validas.indexOf(escola);
+  return {
+    posicao: indice >= 0 ? indice + 1 : null,
+    total: validas.length,
+    media: validas.length ? media(validas, e => e[campo]) : null,
+    melhor: validas.length ? validas[0][campo] : null
+  };
+}
+
+const textoPosicao = est => est.posicao ? `${est.posicao}º de ${est.total}` : "Sem dado";
+
+function tabelaPlataformas(escola) {
+  return tabela(`Resultados de ${escola.nome} por plataforma`,
+    ["Plataforma", "Resultado", "Posição", "Média da URE"],
+    Object.entries(PLATAFORMAS).map(([chave, p]) => {
+      const est = estatisticaPlataforma(chave, escola);
+      return [p.nome, numero(escola[p.campo], p.casas), textoPosicao(est), numero(est.media, p.casas)];
+    }));
+}
+
+// Cada contexto devolve o rótulo da visão e o HTML das tabelas
+const FICHAS = {
+  // Clique no Top 5, no resumo ou nos destaques de ranking
+  ranking: e => ({
+    rotulo: "Visão: ranking geral",
+    html: tabela(`Posição de ${e.nome} no ranking geral`, ["Indicador", "Resultado"], [
+      ["Posição no ranking geral", `${e.posicao}º de ${ESCOLAS.length}`],
+      ["Nota final", numero(e.notaFinal)],
+      ["Nota Tarefa SP", numero(e.notaTarefa)],
+      ["Vezes no Top 3 / Top 5 / Top 10", `${e.top3} / ${e.top5} / ${e.top10}`],
+      ["Posição média ao longo do ano", `${numero(e.posicaoMedia, 1)}º`]
+    ]) + "<h3>Posição por plataforma</h3>" + tabelaPlataformas(e)
+  }),
+
+  // Clique nas barras de uma plataforma
+  plataforma: e => {
+    const p = PLATAFORMAS[plataformaAtual];
+    const est = estatisticaPlataforma(plataformaAtual, e);
+    const tem = !semValor(e[p.campo]) && est.media !== null;
+    return {
+      rotulo: `Visão: plataforma ${p.nome}`,
+      html: tabela(`${e.nome} em ${p.nome}`, ["Indicador", "Resultado"], [
+        ["Resultado", numero(e[p.campo], p.casas)],
+        ["Posição", textoPosicao(est)],
+        ["Média da URE", numero(est.media, p.casas)],
+        ["Diferença para a média", tem ? numero(e[p.campo] - est.media, p.casas) : "Sem dado"],
+        ["Melhor resultado da URE", numero(est.melhor, p.casas)]
+      ]) + "<h3>Todas as plataformas</h3>" + tabelaPlataformas(e)
+    };
+  },
+
+  // Clique na tela Aluno Presente / IFA
+  ifa: e => {
+    const necessaria = mediaNecessaria(e);
+    const periodos = [["Semanas 1 a 37", formatarPontos(e.presenca * 100), "Base consolidada"]];
+    for (let s = CONFIG.semanasConcluidas + 1; s <= CONFIG.semanaFinal; s++) {
+      const v = lancamentos?.[s]?.[e.codigo];
+      periodos.push([`Semana ${s}`, semValor(v) ? "Sem lançamento" : formatarPontos(v), semValor(v) ? "Prevista" : "Lançada"]);
+    }
+    return {
+      rotulo: "Visão: Aluno Presente / IFA",
+      html: tabela(`IFA de ${e.nome}`, ["Indicador", "Resultado"], [
+        ["Presença consolidada", formatarPontos(presencaAtual(e).media)],
+        ["IFA da escola", formatarPontos(e.ifa)],
+        ["IFA da URE", formatarPontos(CONFIG.ifaURE)],
+        ["Média necessária até a semana 42", necessaria === null ? "Meta já atingida" : formatarPontos(necessaria)],
+        ["Projeção de fechamento", formatarPontos(presencaProjetada(e))],
+        ["Situação", seloSituacao(situacaoIFA(e))]
+      ]) + "<h3>Presença por período</h3>" + tabela(`Presença de ${e.nome} por período`, ["Período", "Presença", "Status"], periodos)
+    };
+  },
+
+  // Clique na tela Escolas (ficha completa)
+  escolas: e => ({
+    rotulo: "Visão: ficha completa",
+    html: tabela(`Resumo de ${e.nome}`, ["Indicador", "Resultado"], [
+      ["Ranking geral", `${e.posicao}º de ${ESCOLAS.length}`],
+      ["Nota final", numero(e.notaFinal)],
+      ["Presença consolidada", formatarPontos(presencaAtual(e).media)],
+      ["IFA da escola", formatarPontos(e.ifa)],
+      ["Situação do IFA", seloSituacao(situacaoIFA(e))],
+      ["Supervisor(a)", botaoSupervisor(e.supervisor)]
+    ]) + "<h3>Desempenho por plataforma</h3>" + tabelaPlataformas(e)
+  })
+};
+
+function mostrarModal() {
+  const modal = $("#modal-escola");
+  if (!modal.open) modal.showModal();
+  $("#modal-conteudo").scrollTop = 0;
+}
+
+function abrirFicha(codigo, contexto = "escolas") {
   const escola = buscarEscola(codigo);
   if (!escola) return;
+  const { rotulo, html } = (FICHAS[contexto] || FICHAS.escolas)(escola);
 
-  const necessaria = mediaNecessaria(escola);
   $("#modal-titulo").textContent = nomeCompleto(escola);
+  $("#modal-conteudo").innerHTML = `<p class="contexto-ficha">${escapar(rotulo)}</p>${html}`;
+  mostrarModal();
+}
+
+// Clique no nome de um(a) supervisor(a): tabela com as escolas dele(a)
+function abrirSupervisor(nome) {
+  const sup = rankingSupervisores().find(s => s.nome === nome);
+  if (!sup) return;
+
+  $("#modal-titulo").textContent = sup.nome;
   $("#modal-conteudo").innerHTML = `
-    <section class="ficha-indicadores">
-      ${indicadorFicha("Ranking geral", `${escola.posicao}º lugar`)}
-      ${indicadorFicha("Nota final", numero(escola.notaFinal))}
-      ${indicadorFicha("Presença consolidada", formatarPontos(presencaAtual(escola).media))}
-      ${indicadorFicha("Projeção de fechamento", formatarPontos(presencaProjetada(escola)))}
-      ${indicadorFicha("IFA da escola", formatarPontos(escola.ifa))}
-      ${indicadorFicha("IFA da URE", formatarPontos(CONFIG.ifaURE))}
-      ${indicadorFicha("Média necessária", necessaria === null ? "Meta já atingida" : formatarPontos(necessaria))}
-    </section>
-    <p>${seloSituacao(situacaoIFA(escola))}</p>
-
-    <h3>Desempenho por plataforma</h3>
-    <div class="tabela-rolagem" tabindex="0" role="region" aria-label="Resultados por plataforma">
-      <table>
-        <caption class="sr-only">Resultados de ${escapar(nomeCompleto(escola))} por plataforma</caption>
-        <thead><tr><th scope="col">Plataforma</th><th scope="col">Resultado</th></tr></thead>
-        <tbody>
-          ${Object.values(PLATAFORMAS).map(p => `
-            <tr><td>${p.nome}</td><td>${numero(escola[p.campo], p.casas)}</td></tr>`).join("")}
-        </tbody>
-      </table>
-    </div>
-
-    <h3>Supervisão</h3>
-    <p>${escola.supervisor ? escapar(escola.supervisor) : '<span class="sem-dado">Supervisor(a) não informado(a) na base.</span>'}</p>
-
-    <h3>Histórico no ranking geral</h3>
-    <p>Top 3: ${escola.top3} vez(es) • Top 5: ${escola.top5} vez(es) • Top 10: ${escola.top10} vez(es)
-       • Posição média: ${numero(escola.posicaoMedia, 1)}º lugar</p>`;
-
-  $("#modal-escola").showModal();
+    <p class="contexto-ficha">Visão: supervisão (${sup.posicao}º no ranking de supervisores)</p>
+    ${tabela(`Escolas de ${sup.nome}`, ["Escola", "Nota final", "Presença", "IFA", "Situação"],
+      [...sup.escolas].sort(ORDENACOES.ranking).map(e => [
+        botaoEscola(e, "escolas"), numero(e.notaFinal), formatarPontos(presencaAtual(e).media),
+        formatarPontos(e.ifa), seloSituacao(situacaoIFA(e))
+      ]))}
+    <p>Nota média: <strong>${numero(sup.notaMedia)}</strong> · Presença média:
+       <strong>${formatarPontos(sup.presencaMedia)}</strong> · Dentro do IFA:
+       <strong>${sup.dentroIFA} de ${sup.escolas.length}</strong></p>`;
+  mostrarModal();
 }
 
 /* =========================
@@ -456,8 +607,11 @@ function abrirFicha(codigo) {
 function configurarEventos() {
   // Abertura da ficha por delegação: vale para qualquer tabela, mesmo após re-renderizar.
   document.addEventListener("click", evento => {
-    const botao = evento.target.closest(".escola-link");
-    if (botao) abrirFicha(botao.dataset.codigo);
+    const escola = evento.target.closest(".escola-link");
+    if (escola) return abrirFicha(escola.dataset.codigo, escola.dataset.contexto);
+
+    const supervisor = evento.target.closest(".supervisor-link");
+    if (supervisor) abrirSupervisor(supervisor.dataset.supervisor);
   });
 
   // Navegação entre telas
@@ -479,7 +633,6 @@ function configurarEventos() {
   ligar(["#busca-escola"], "input", renderizarEscolas);
   ligar(["#filtro-supervisor", "#ordenar-escolas"], "change", renderizarEscolas);
   ligar(["#busca-plataforma"], "input", renderizarPlataformas);
-  ligar(["#selecionar-plataforma"], "change", renderizarPlataformas);
   ligar(["#busca-ifa"], "input", renderizarIFA);
   ligar(["#filtro-situacao-ifa", "#ordenar-ifa"], "change", renderizarIFA);
 
@@ -512,6 +665,7 @@ function configurarEventos() {
 function iniciar() {
   configurarEventos();
   preencherSupervisores();
+  montarAbasPlataforma();
   atualizarTudo();
   renderizarPlataformas();
   renderizarCalculadora();
