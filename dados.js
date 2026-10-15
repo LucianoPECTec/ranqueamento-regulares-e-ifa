@@ -1,15 +1,22 @@
 /* =========================================================
    Monitoramento Escolar — URE São José do Rio Preto
-   Arquivo: dados.js
-   Base: 29 escolas
-   Levantamento: semanas 1 a 37
-   Projeção: semanas 38 a 42
+   Arquivo: dados.js  |  Escopo: ESCOLAS REGULARES
+   ---------------------------------------------------------
+   Este arquivo guarda SOMENTE dados (nenhuma lógica de tela):
+   1. CONFIG ............ período, semana final e IFA da URE
+   2. PLATAFORMAS ....... nome, campo e casas decimais
+   3. ESCOLAS ........... base consolidada até a semana 37
+   4. LANCAMENTOS_SEMANAIS . presença das semanas 38 a 42
+
+   Unidades: `presenca` é fração (0,886 = 88,6%); `ifa` e os
+   lançamentos semanais estão em pontos percentuais (83,2 = 83,2%).
    ========================================================= */
 
 const CONFIG = {
-  semanasConcluidas: 37,
-  semanasRestantes: 5,
-  semanaFinal: 42,
+  rede: "Escolas regulares",   // escopo do painel (não inclui outras modalidades)
+  anoLetivo: 2026,
+  semanasConcluidas: 37,       // última semana consolidada na base
+  semanaFinal: 42,             // última semana considerada no cálculo do IFA
   ifaURE: 83.3,
   periodos: {
     levantamento: "1ª semana até a semana 37",
