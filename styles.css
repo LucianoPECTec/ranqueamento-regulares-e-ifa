@@ -240,51 +240,6 @@ main { padding-block: 8px 48px; }
    5. Top 5 e linha do tempo
    ========================= */
 
-/* Grade de 6 colunas: os 3 primeiros ocupam 2 colunas, o 4º e o 5º ocupam 3 */
-.top5 {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 14px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.top5-item {
-  grid-column: span 3;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 16px;
-  border: 1px solid var(--borda);
-  border-radius: var(--raio);
-  background: var(--fundo);
-}
-.top5-item:nth-child(-n+3) { grid-column: span 2; }
-.top5-item p { margin: 2px 0 0; font-size: .875rem; color: var(--texto-suave); }
-
-.top5-posicao {
-  flex: none;
-  display: grid;
-  place-items: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: var(--azul-claro);
-  color: var(--azul-escuro);
-  font-size: 1.15rem;
-  font-weight: 800;
-}
-
-/* Destaque dos 3 melhores: cor da medalha + borda; o 1º é maior */
-.destaque-1, .destaque-2, .destaque-3 { background: var(--branco); border-width: 2px; }
-.destaque-1 { border-color: var(--ouro); box-shadow: 0 6px 18px rgba(242, 194, 48, .35); }
-.destaque-2 { border-color: var(--prata); }
-.destaque-3 { border-color: var(--bronze); }
-.destaque-1 .top5-posicao { background: var(--ouro); color: #3d2e00; width: 58px; height: 58px; font-size: 1.4rem; }
-.destaque-2 .top5-posicao { background: var(--prata); color: #27313a; }
-.destaque-3 .top5-posicao { background: var(--bronze); color: #3a1f05; }
-
 /* Linha do tempo das semanas 38 a 42 (o estado também aparece em texto) */
 .linha-projecao {
   display: grid;
@@ -342,7 +297,8 @@ thead th {
 tbody tr:hover { background: #f8fafc; }
 tbody tr:last-child td { border-bottom: 0; }
 
-.escola-link {
+.escola-link,
+.supervisor-link {
   min-height: 32px;
   padding: 0;
   border: 0;
@@ -479,10 +435,6 @@ input, select {
   cursor: pointer;
 }
 
-.ficha-indicadores { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin-bottom: 20px; }
-.ficha-indicador { padding: 12px; border-radius: 10px; background: var(--azul-claro); }
-.ficha-indicador span { display: block; margin-bottom: 4px; font-size: .8rem; font-weight: 700; color: var(--azul-escuro); }
-.ficha-indicador strong { font-size: 1.05rem; color: var(--azul-escuro); }
 
 .rodape { padding-block: 28px; background: var(--azul-escuro); color: var(--branco); }
 .rodape p { margin: 0 0 8px; }
@@ -492,10 +444,6 @@ input, select {
    10. Responsividade e preferências do usuário
    ========================= */
 
-@media (max-width: 900px) {
-  .top5 { grid-template-columns: 1fr; }
-  .top5-item, .top5-item:nth-child(-n+3) { grid-column: auto; }
-}
 
 @media (max-width: 720px) {
   .container { padding-inline: 14px; }
@@ -523,3 +471,149 @@ input, select {
 @media (forced-colors: active) {
   .selo, .semana, .top5-item { border: 2px solid CanvasText; }
 }
+
+/* =========================================================
+   11. Identidade visual: cabeçalho, cartões, pódio e barras
+   ========================================================= */
+
+:root { --sombra: 0 4px 18px rgba(16, 55, 92, .10); --raio: 16px; }
+
+body { font-variant-numeric: tabular-nums; }
+
+.topbar { background: linear-gradient(120deg, #0b2a4a 0%, #14558c 60%, #1b7bb8 100%); }
+.topbar h1 { font-size: clamp(1.9rem, 5vw, 2.9rem); font-weight: 800; letter-spacing: -.01em; }
+
+.menu-botao { border-radius: 999px 999px 0 0; }
+.menu-botao.ativo { box-shadow: inset 0 -4px 0 var(--ouro); }
+
+.indicador { border-top: 4px solid var(--azul-medio); }
+.indicador .valor { font-size: 1.6rem; }
+
+thead th { text-transform: none; font-size: .88rem; letter-spacing: 0; }
+tbody tr:nth-child(even) { background: #fafcfe; }
+
+/* ---- Pódio do Top 5 ---- */
+.top5 { display: grid; gap: 22px; }
+
+.podio {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  align-items: end;
+  margin: 0;
+  padding: 8px 0 0;
+  list-style: none;
+}
+.podio-1 { order: 2; --altura: 96px; --cor: var(--ouro); --texto-degrau: #3d2e00; }
+.podio-2 { order: 1; --altura: 64px; --cor: var(--prata); --texto-degrau: #27313a; }
+.podio-3 { order: 3; --altura: 44px; --cor: var(--bronze); --texto-degrau: #3a1f05; }
+
+.podio-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 22px 14px 0;
+  border: 2px solid var(--cor);
+  border-bottom: 0;
+  border-radius: var(--raio) var(--raio) 0 0;
+  background: var(--branco);
+  text-align: center;
+}
+.podio-1 { background: linear-gradient(#fff6d6, #fff); padding-top: 34px; box-shadow: 0 -8px 24px rgba(242, 194, 48, .28); }
+.podio-item .escola-link { text-align: center; text-decoration: none; font-size: 1.02rem; }
+.podio-item small { color: var(--texto-suave); }
+
+.podio-dados { display: flex; gap: 22px; margin: 8px 0 14px; }
+.podio-dados div { display: flex; flex-direction: column-reverse; }
+.podio-dados dt { font-size: .8rem; color: var(--texto-suave); }
+.podio-dados dd { margin: 0; font-size: 1.25rem; font-weight: 800; color: var(--azul-escuro); }
+
+/* Degrau com o número da colocação */
+.podio-degrau {
+  display: grid;
+  place-items: center;
+  width: calc(100% + 28px);
+  height: var(--altura);
+  margin-inline: -14px;
+  background: var(--cor);
+  color: var(--texto-degrau);
+  font-size: 2rem;
+  font-weight: 800;
+}
+
+.top-lista { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.top-linha {
+  display: grid;
+  grid-template-columns: 48px 1fr auto;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  border: 1px solid var(--borda);
+  border-radius: 12px;
+  background: var(--fundo);
+}
+.top-num { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--azul-claro); color: var(--azul-escuro); font-weight: 800; }
+.top-nota { font-weight: 700; color: var(--azul-escuro); }
+
+/* ---- Plataformas: abas e barras ---- */
+.plataformas-controles { display: grid; gap: 16px; margin-bottom: 22px; }
+.abas-plataforma { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.aba-plataforma {
+  min-height: var(--toque);
+  padding: 8px 18px;
+  border: 1px solid var(--azul-medio);
+  border-radius: 999px;
+  background: var(--branco);
+  color: var(--azul-medio);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.aba-plataforma:hover { background: var(--azul-claro); }
+.aba-plataforma[aria-pressed="true"] { background: var(--azul-medio); color: var(--branco); }
+
+.resumo-plataforma { margin: 0 0 16px; padding: 10px 14px; border-radius: 10px; background: var(--azul-claro); color: var(--azul-escuro); font-weight: 600; }
+
+.barras { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+
+.barra {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 6px;
+  --cor: var(--azul-medio);
+}
+.barra-1 { --cor: #e0a800; }
+.barra-2 { --cor: #8f9ba6; }
+.barra-3 { --cor: #c27a3a; }
+
+.barra-pos { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--azul-claro); color: var(--azul-escuro); font-weight: 800; font-size: .95rem; }
+.barra-1 .barra-pos { background: var(--ouro); color: #3d2e00; }
+.barra-2 .barra-pos { background: var(--prata); color: #27313a; }
+.barra-3 .barra-pos { background: var(--bronze); color: #3a1f05; }
+
+.barra-corpo { display: grid; gap: 4px; min-width: 0; }
+.barra-corpo .escola-link { overflow-wrap: anywhere; }
+.barra-trilho { height: 12px; border-radius: 999px; background: #e6edf3; overflow: hidden; }
+.barra-fill { display: block; height: 100%; border-radius: 999px; background: var(--cor); }
+.barra-valor { min-width: 4.5rem; text-align: right; color: var(--azul-escuro); font-size: 1.05rem; }
+
+@media (max-width: 720px) {
+  .podio { grid-template-columns: 1fr; }
+  .podio-1, .podio-2, .podio-3 { order: 0; --altura: 40px; }
+  .podio-item, .podio-1 { padding-top: 18px; border-bottom: 2px solid var(--cor); border-radius: var(--raio); overflow: hidden; }
+  .podio-degrau { font-size: 1.3rem; }
+  .barra { grid-template-columns: 38px 1fr auto; gap: 8px; }
+  .abas-plataforma { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 6px; }
+  .aba-plataforma { white-space: nowrap; }
+}
+
+/* ---- Fichas em modal ---- */
+.contexto-ficha { display: inline-block; margin: 0 0 14px; padding: 4px 12px; border-radius: 999px; background: var(--azul-claro); color: var(--azul-escuro); font-size: .85rem; font-weight: 700; }
+.modal-conteudo h3 { margin: 22px 0 8px; }
+.modal-conteudo table { min-width: 0; }
+.modal-conteudo tbody td:first-child { font-weight: 600; }
+.indicador .valor .escola-link { font-size: 1.1rem; }
