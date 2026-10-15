@@ -7,17 +7,15 @@
    2. PLATAFORMAS ....... nome, campo e casas decimais
    3. ESCOLAS ........... base consolidada até a semana 37
    4. LANCAMENTOS_SEMANAIS . presença das semanas 38 a 42
-
-   Unidades: `presenca` é fração (0,886 = 88,6%); `ifa` e os
-   lançamentos semanais estão em pontos percentuais (83,2 = 83,2%).
    ========================================================= */
 
 const CONFIG = {
-  rede: "Escolas regulares",   // escopo do painel (não inclui outras modalidades)
+  rede: "Escolas regulares",
   anoLetivo: 2026,
-  semanasConcluidas: 37,       // última semana consolidada na base
-  semanaFinal: 42,             // última semana considerada no cálculo do IFA
+  semanasConcluidas: 37,
+  semanaFinal: 42,
   ifaURE: 83.3,
+  urlSincronizacao: "",
   periodos: {
     levantamento: "1ª semana até a semana 37",
     projecao: "semanas 38 a 42"
@@ -28,6 +26,8 @@ const PLATAFORMAS = {
   tarefa: {
     nome: "Tarefa SP",
     campo: "tarefa",
+    formato: "percentual",
+    campoNota: "notaTarefa",
     casas: 2
   },
   redacao: {
@@ -296,27 +296,6 @@ const ESCOLAS = [
   },
   {
     posicao: 12,
-    nome: "NAIR SANTOS CUNHA PROFESSORA",
-    codigo: "28678",
-    top3: 1,
-    top5: 1,
-    top10: 4,
-    posicaoMedia: 15.3,
-    notaFinal: 9.127136417509721,
-    tarefa: 0.46027673170149674,
-    redacao: 0.7281344248168893,
-    leia: 859.0875355450241,
-    speak: 0.432,
-    alura: 3.8250180115273773,
-    matific: 2.2180185084376705,
-    khan: 2.0149147727272734,
-    notaTarefa: 6.570182221599514,
-    presenca: 0.843,
-    ifa: 84.0,
-    supervisor: null
-  },
-  {
-    posicao: 13,
     nome: "ALBERTO ANDALO",
     codigo: "28538",
     top3: 1,
@@ -337,7 +316,7 @@ const ESCOLAS = [
     supervisor: "DINAMARCA DA SILVA"
   },
   {
-    posicao: 14,
+    posicao: 13,
     nome: "CELSO ABBADE MOURAO",
     codigo: "918337",
     top3: 1,
@@ -358,7 +337,7 @@ const ESCOLAS = [
     supervisor: "BEN HUR ULISSES DA SILVA"
   },
   {
-    posicao: 15,
+    posicao: 14,
     nome: "BENTO ABELAIRA GOMES PROFESSOR",
     codigo: "918313",
     top3: 1,
@@ -379,7 +358,7 @@ const ESCOLAS = [
     supervisor: "ADRIANA APARECIDA CAMPANHOLA DO PRADO"
   },
   {
-    posicao: 16,
+    posicao: 15,
     nome: "JOSE FELICIO MIZIARA PROFESSOR",
     codigo: "28927",
     top3: 1,
@@ -400,7 +379,7 @@ const ESCOLAS = [
     supervisor: "SOLANGE MARIA DA SILVA"
   },
   {
-    posicao: 17,
+    posicao: 16,
     nome: "ADAHIR GUIMARAES FOGACA PROFESSOR",
     codigo: "28685",
     top3: 1,
@@ -421,7 +400,7 @@ const ESCOLAS = [
     supervisor: "JULIANA PAVANI DE PAULA BUENO GUIMARÃES"
   },
   {
-    posicao: 18,
+    posicao: 17,
     nome: "NOEMIA BUENO DO VALLE PROFESSORA",
     codigo: "28551",
     top3: 0,
@@ -442,7 +421,7 @@ const ESCOLAS = [
     supervisor: "LUCIANE GUIDUCE NOGUEIRA"
   },
   {
-    posicao: 19,
+    posicao: 18,
     nome: "MARIA DE LOURDES MURAD DE CAMARGO PROFESSORA",
     codigo: "907169",
     top3: 0,
@@ -463,7 +442,7 @@ const ESCOLAS = [
     supervisor: null
   },
   {
-    posicao: 20,
+    posicao: 19,
     nome: "DINORATH DO VALLE PROFESSORA",
     codigo: "436239",
     top3: 0,
@@ -484,7 +463,7 @@ const ESCOLAS = [
     supervisor: "JOSEFA BASILIO DA SILVEIRA"
   },
   {
-    posicao: 21,
+    posicao: 20,
     nome: "FRANCISCO PURITA PROFESSOR",
     codigo: "28617",
     top3: 0,
@@ -505,7 +484,7 @@ const ESCOLAS = [
     supervisor: "WAGNER HENRIQUE DA SILVA"
   },
   {
-    posicao: 22,
+    posicao: 21,
     nome: "DARCY FEDERICI PACHECO PROFESSOR",
     codigo: "914411",
     top3: 0,
@@ -526,7 +505,7 @@ const ESCOLAS = [
     supervisor: "EDMAR MONTELLI"
   },
   {
-    posicao: 23,
+    posicao: 22,
     nome: "AURELIANO MENDONCA PROFESSOR",
     codigo: "35828",
     top3: 0,
@@ -547,7 +526,7 @@ const ESCOLAS = [
     supervisor: "DULCE REGINA DE CARVALHO CENEVIVA"
   },
   {
-    posicao: 24,
+    posicao: 23,
     nome: "WALDEMIRO NAFFAH DOUTOR",
     codigo: "908150",
     top3: 0,
@@ -568,7 +547,7 @@ const ESCOLAS = [
     supervisor: "ANDERSON RIZZUTTI PRESTES"
   },
   {
-    posicao: 25,
+    posicao: 24,
     nome: "ALZIRA VALLE ROLEMBERG PROFESSORA",
     codigo: "908149",
     top3: 0,
@@ -589,7 +568,7 @@ const ESCOLAS = [
     supervisor: "ADRIANA APARECIDA CAMPANHOLA DO PRADO"
   },
   {
-    posicao: 26,
+    posicao: 25,
     nome: "FRANCISCO MARQUES PINTO",
     codigo: "27820",
     top3: 0,
@@ -610,7 +589,7 @@ const ESCOLAS = [
     supervisor: "MAURA CRISTINA DA SILVA"
   },
   {
-    posicao: 27,
+    posicao: 26,
     nome: "SONIA MARIA VENTURELLI PROFESSORA",
     codigo: "919688",
     top3: 0,
@@ -631,7 +610,7 @@ const ESCOLAS = [
     supervisor: "DULCE REGINA DE CARVALHO CENEVIVA"
   },
   {
-    posicao: 28,
+    posicao: 27,
     nome: "JOAO DEOCLECIO DA SILVA RAMOS PROFESSOR DOUTOR",
     codigo: "28859",
     top3: 0,
@@ -652,7 +631,7 @@ const ESCOLAS = [
     supervisor: "WAGNER HENRIQUE DA SILVA"
   },
   {
-    posicao: 29,
+    posicao: 28,
     nome: "ANTONIO DE BARROS SERRA PROFESSOR",
     codigo: "28769",
     top3: 0,
@@ -674,18 +653,6 @@ const ESCOLAS = [
   }
 ];
 
-/* =========================================================
-   Lançamentos semanais do Aluno Presente
-   ---------------------------------------------------------
-   Para atualizar no GitHub:
-   1. Lance a presença da semana no painel.
-   2. Clique em “Exportar lançamentos”.
-   3. Copie os valores do arquivo JSON exportado.
-   4. Substitua os valores abaixo.
-   5. Faça commit no GitHub.
-   6. O GitHub Pages atualiza o painel para todos.
-   ========================================================= */
-
 const LANCAMENTOS_SEMANAIS = {
   38: {},
   39: {},
@@ -693,13 +660,3 @@ const LANCAMENTOS_SEMANAIS = {
   41: {},
   42: {}
 };
-
-/* Exemplo de preenchimento futuro:
-const LANCAMENTOS_SEMANAIS = {
-  38: {
-    "28769": 95,
-    "27820": 88,
-    "918337": 90
-  }
-};
-*/
