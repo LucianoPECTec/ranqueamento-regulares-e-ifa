@@ -1,714 +1,519 @@
 /* =========================================================
    Monitoramento Escolar — URE São José do Rio Preto
-   Arquivo: app.js
-   Base: 29 escolas | Semanas 1 a 37 | Projeção: semanas 38 a 42
+   Arquivo: app.js  |  Escopo: ESCOLAS REGULARES
+   ---------------------------------------------------------
+   Seções:
+   1. Utilidades e formatação
+   2. Armazenamento dos lançamentos
+   3. Cálculos do IFA e da projeção
+   4. Rankings (Top 5 e supervisores)
+   5. Renderização das telas
+   6. Calculadora semanal
+   7. Ficha da escola
+   8. Inicialização
+
+   Convenção: presença e IFA ficam em PONTOS PERCENTUAIS (88,6 = 88,6%).
+   Só `escola.presenca` (dados.js) é fração (0,886).
    ========================================================= */
+"use strict";
 
 const CHAVE_ARMAZENAMENTO = "lancamentosIFA-URE-SJRP";
-
-let lancamentos = carregarLancamentos();
+const LIMITE_ATENCAO = 90; // média necessária a partir da qual a escola pede atenção
 
 /* =========================
-   Utilidades
+   1. Utilidades e formatação
    ========================= */
 
-const $ = seletor => document.querySelector(seletor);
-const $$ = seletor => Array.from(document.querySelectorAll(seletor));
+const $ = (seletor, raiz = document) => raiz.querySelector(seletor);
+const $$ = (seletor, raiz = document) => Array.from(raiz.querySelectorAll(seletor));
+
+const semValor = valor => valor === null || valor === undefined || valor === "";
+const media = (lista, extrair) => lista.reduce((t, item) => t + extrair(item), 0) / lista.length;
 
 function numero(valor, casas = 2) {
-  if (valor === null || valor === undefined || valor === "") {
-    return "Sem dado";
-  }
-
+  if (semValor(valor)) return "Sem dado";
   return Number(valor).toLocaleString("pt-BR", {
     minimumFractionDigits: casas,
     maximumFractionDigits: casas
   });
 }
 
-function percentual(valor, casas = 2) {
-  if (valor === null || valor === undefined || valor === "") {
-    return "Sem dado";
-  }
+// Recebe pontos percentuais (88,6) e devolve "88,60%".
+const formatarPontos = (valor, casas = 2) =>
+  semValor(valor) ? "Sem dado" : `${numero(valor, casas)}%`;
 
-  return `${numero(valor * 100, casas)}%`;
+const nomeCompleto = escola => `${escola.nome} - ${escola.codigo}`;
+const buscarEscola = codigo => ESCOLAS.find(e => e.codigo === String(codigo));
+
+// Evita que textos da base sejam interpretados como HTML.
+const escapar = texto => String(texto ?? "").replace(/[&<>"']/g, c =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+function preencherTabela(id, linhas, colunasVazio = 1) {
+  const corpo = $(id);
+  if (!corpo) return;
+  corpo.innerHTML = linhas.length
+    ? linhas.join("")
+    : `<tr><td colspan="${colunasVazio}" class="sem-dado">Nenhum resultado disponível.</td></tr>`;
 }
 
-function nomeCompleto(escola) {
-  return `${escola.nome} - ${escola.codigo}`;
-}
-
-function buscarEscolaPorCodigo(codigo) {
-  return ESCOLAS.find(escola => escola.codigo === String(codigo));
-}
-
-/* =========================
-   Cálculo do IFA
-   ========================= */
-
-function presencaAtual(escola) {
-  const codigo = escola.codigo;
-  let soma = escola.presenca * CONFIG.semanasConcluidas * 100;
-  let semanas = CONFIG.semanasConcluidas;
-
-  for (
-    let semana = CONFIG.semanasConcluidas + 1;
-    semana <= CONFIG.semanaFinal;
-    semana++
-  ) {
-    const valor = lancamentos?.[semana]?.[codigo];
-
-    if (valor !== undefined && valor !== null && valor !== "") {
-      soma += Number(valor);
-      semanas++;
-    }
-  }
-
-  return {
-    soma,
-    semanas,
-    media: semanas > 0 ? soma / semanas : 0
-  };
-}
-
-function semanasRestantes(escola) {
-  const atual = presencaAtual(escola);
-  return Math.max(0, CONFIG.semanaFinal - atual.semanas);
-}
-
-function mediaNecessaria(escola) {
-  const atual = presencaAtual(escola);
-  const restantes = semanasRestantes(escola);
-
-  if (restantes === 0) {
-    return null;
-  }
-
-  return (CONFIG.semanaFinal * escola.ifa - atual.soma) / restantes;
-}
-
-function situacaoIFA(escola) {
-  const atual = presencaAtual(escola);
-  const necessaria = mediaNecessaria(escola);
-
-  if (atual.media >= escola.ifa) {
-    return "Dentro do IFA";
-  }
-
-  if (necessaria === null) {
-    return "Dentro do IFA";
-  }
-
-  if (necessaria > 100) {
-    return "Fora do alcance da meta";
-  }
-
-  return "Em acompanhamento";
-}
-
-function classeSelo(situacao) {
-  if (situacao === "Dentro do IFA") {
-    return "selo selo-dentro";
-  }
-
-  if (situacao === "Fora do alcance da meta") {
-    return "selo selo-fora";
-  }
-
-  return "selo selo-acompanhamento";
+// Mensagem acessível (leitores de tela) com alternativa para alert().
+function avisar(texto) {
+  const area = $("#status-painel");
+  if (area) area.textContent = texto;
+  else alert(texto);
 }
 
 /* =========================
-   Armazenamento local
+   2. Armazenamento dos lançamentos
    ========================= */
+
+// Os dados publicados no GitHub são a base; o navegador só sobrescreve semanas lançadas.
+function mesclarLancamentos(base, local) {
+  const resultado = structuredClone(base);
+  Object.entries(local || {}).forEach(([semana, escolas]) => {
+    resultado[semana] = { ...(resultado[semana] || {}), ...escolas };
+  });
+  return resultado;
+}
 
 function carregarLancamentos() {
   try {
-    const salvo = localStorage.getItem(CHAVE_ARMAZENAMENTO);
-    return salvo ? JSON.parse(salvo) : structuredClone(LANCAMENTOS_SEMANAIS);
+    const salvo = JSON.parse(localStorage.getItem(CHAVE_ARMAZENAMENTO));
+    return mesclarLancamentos(LANCAMENTOS_SEMANAIS, salvo);
   } catch (erro) {
-    console.warn("Não foi possível carregar os lançamentos salvos.", erro);
+    console.warn("Não foi possível ler os lançamentos salvos.", erro);
     return structuredClone(LANCAMENTOS_SEMANAIS);
   }
 }
 
-function salvarLancamentos() {
+const salvarLancamentos = () =>
   localStorage.setItem(CHAVE_ARMAZENAMENTO, JSON.stringify(lancamentos));
-}
+
+let lancamentos = carregarLancamentos();
 
 /* =========================
-   Navegação
+   3. Cálculos do IFA e da projeção
    ========================= */
 
-function configurarNavegacao() {
-  $$(".menu-botao").forEach(botao => {
-    botao.addEventListener("click", () => {
-      const destino = botao.dataset.view;
+// Soma e média de presença: base consolidada + semanas já lançadas.
+function presencaAtual(escola) {
+  let soma = escola.presenca * 100 * CONFIG.semanasConcluidas;
+  let semanas = CONFIG.semanasConcluidas;
 
-      $$(".menu-botao").forEach(item => item.classList.remove("ativo"));
-      botao.classList.add("ativo");
+  for (let s = CONFIG.semanasConcluidas + 1; s <= CONFIG.semanaFinal; s++) {
+    const valor = lancamentos?.[s]?.[escola.codigo];
+    if (!semValor(valor)) {
+      soma += Number(valor);
+      semanas++;
+    }
+  }
+  return { soma, semanas, media: soma / semanas };
+}
 
-      $$(".visao").forEach(secao => secao.classList.remove("ativa"));
-      $(`#view-${destino}`).classList.add("ativa");
+// Média que a escola precisa manter nas semanas que faltam para fechar o IFA.
+function mediaNecessaria(escola) {
+  const { soma, semanas } = presencaAtual(escola);
+  const restantes = CONFIG.semanaFinal - semanas;
+  return restantes > 0 ? (CONFIG.semanaFinal * escola.ifa - soma) / restantes : null;
+}
 
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-      });
+function situacaoIFA(escola) {
+  const necessaria = mediaNecessaria(escola);
+  if (presencaAtual(escola).media >= escola.ifa || necessaria === null) return "Dentro do IFA";
+  return necessaria > 100 ? "Fora do alcance da meta" : "Em acompanhamento";
+}
+
+const SELOS = {
+  "Dentro do IFA": "selo selo-dentro",
+  "Em acompanhamento": "selo selo-acompanhamento",
+  "Fora do alcance da meta": "selo selo-fora"
+};
+const seloSituacao = situacao => `<span class="${SELOS[situacao]}">${situacao}</span>`;
+
+// Projeção de fechamento: semanas sem lançamento repetem a média atual da escola.
+function presencaProjetada(escola) {
+  const { soma, semanas, media: atual } = presencaAtual(escola);
+  return (soma + (CONFIG.semanaFinal - semanas) * atual) / CONFIG.semanaFinal;
+}
+
+// Estado de cada semana futura: lançada, parcial ou prevista (atualiza sozinho).
+function projecaoSemanal() {
+  const semanas = [];
+  for (let s = CONFIG.semanasConcluidas + 1; s <= CONFIG.semanaFinal; s++) {
+    const valores = ESCOLAS
+      .map(e => lancamentos?.[s]?.[e.codigo])
+      .filter(v => !semValor(v))
+      .map(Number);
+
+    const estado = valores.length === 0 ? "prevista"
+      : valores.length === ESCOLAS.length ? "lancada" : "parcial";
+
+    semanas.push({
+      semana: s,
+      estado,
+      lancadas: valores.length,
+      mediaURE: valores.length ? media(valores, v => v) : null
     });
-  });
+  }
+  return semanas;
 }
 
 /* =========================
-   Visão geral
+   4. Rankings
    ========================= */
+
+const rankingTop5 = () => [...ESCOLAS].sort((a, b) => a.posicao - b.posicao).slice(0, 5);
+
+// Critério: média da nota final das escolas; desempate pela presença média.
+function rankingSupervisores() {
+  const grupos = new Map();
+  ESCOLAS.filter(e => e.supervisor).forEach(e => {
+    if (!grupos.has(e.supervisor)) grupos.set(e.supervisor, []);
+    grupos.get(e.supervisor).push(e);
+  });
+
+  return [...grupos]
+    .map(([nome, escolas]) => ({
+      nome,
+      escolas,
+      notaMedia: media(escolas, e => e.notaFinal),
+      presencaMedia: media(escolas, e => presencaAtual(e).media),
+      dentroIFA: escolas.filter(e => situacaoIFA(e) === "Dentro do IFA").length
+    }))
+    .sort((a, b) => b.notaMedia - a.notaMedia || b.presencaMedia - a.presencaMedia)
+    .map((sup, i) => ({ ...sup, posicao: i + 1 }));
+}
+
+/* =========================
+   5. Renderização das telas
+   ========================= */
+
+const botaoEscola = escola =>
+  `<button type="button" class="escola-link" data-codigo="${escola.codigo}">${escapar(nomeCompleto(escola))}</button>`;
+
+function renderizarTop5() {
+  const lista = $("#top5-ranking");
+  if (!lista) return;
+  lista.innerHTML = rankingTop5().map(e => `
+    <li class="top5-item ${e.posicao <= 3 ? `destaque-${e.posicao}` : ""}">
+      <span class="top5-posicao" aria-label="${e.posicao}º lugar">${e.posicao}º</span>
+      <div>${botaoEscola(e)}<p>Nota final ${numero(e.notaFinal)} · Presença ${formatarPontos(presencaAtual(e).media)}</p></div>
+    </li>`).join("");
+}
+
+function renderizarSupervisores() {
+  preencherTabela("#tabela-supervisores", rankingSupervisores().map(s => `
+    <tr>
+      <td>${s.posicao}º</td>
+      <td>${escapar(s.nome)}</td>
+      <td>${s.escolas.length}</td>
+      <td>${numero(s.notaMedia)}</td>
+      <td>${formatarPontos(s.presencaMedia)}</td>
+      <td>${s.dentroIFA} de ${s.escolas.length}</td>
+    </tr>`), 6);
+}
+
+function renderizarProjecao() {
+  const linha = $("#linha-projecao");
+  if (linha) {
+    const rotulos = { lancada: "Lançada", parcial: "Parcial", prevista: "Prevista" };
+    linha.innerHTML = projecaoSemanal().map(p => `
+      <li class="semana semana-${p.estado}">
+        <strong>Semana ${p.semana}</strong>
+        <span>${rotulos[p.estado]}</span>
+        <small>${p.mediaURE === null ? "Aguardando lançamento" : formatarPontos(p.mediaURE)}</small>
+      </li>`).join("");
+  }
+  const kpi = $("#kpi-projecao");
+  if (kpi) kpi.textContent = formatarPontos(media(ESCOLAS, presencaProjetada));
+}
 
 function renderizarVisaoGeral() {
-  $("#kpi-escolas").textContent = ESCOLAS.length;
-  $("#kpi-ranking").textContent = ESCOLAS[0].nome;
+  const maisNota = [...ESCOLAS].sort((a, b) => b.notaFinal - a.notaFinal)[0];
+  const maisPresenca = [...ESCOLAS].sort((a, b) => presencaAtual(b).media - presencaAtual(a).media)[0];
+  const dentro = ESCOLAS.filter(e => situacaoIFA(e) === "Dentro do IFA").length;
 
-  const maiorNota = [...ESCOLAS].sort(
-    (a, b) => b.notaFinal - a.notaFinal
-  )[0];
+  const kpis = {
+    "#kpi-escolas": ESCOLAS.length,
+    "#kpi-ranking": ESCOLAS[0].nome,
+    "#kpi-nota": maisNota.nome,
+    "#kpi-presenca": maisPresenca.nome,
+    "#kpi-ifa": `${dentro} de ${ESCOLAS.length}`
+  };
+  Object.entries(kpis).forEach(([id, texto]) => { if ($(id)) $(id).textContent = texto; });
 
-  const maiorPresenca = [...ESCOLAS].sort(
-    (a, b) => presencaAtual(b).media - presencaAtual(a).media
-  )[0];
+  preencherTabela("#tabela-resumo", [...ESCOLAS].sort((a, b) => a.posicao - b.posicao).map(e => `
+    <tr>
+      <td>${e.posicao}º</td>
+      <td>${botaoEscola(e)}</td>
+      <td>${numero(e.notaFinal)}</td>
+      <td>${formatarPontos(presencaAtual(e).media)}</td>
+      <td>${formatarPontos(e.ifa)}</td>
+      <td>${seloSituacao(situacaoIFA(e))}</td>
+    </tr>`), 6);
 
-  $("#kpi-nota").textContent = maiorNota.nome;
-  $("#kpi-presenca").textContent = maiorPresenca.nome;
-
-  const dentroDoIFA = ESCOLAS.filter(
-    escola => situacaoIFA(escola) === "Dentro do IFA"
-  ).length;
-
-  $("#kpi-ifa").textContent = `${dentroDoIFA} de ${ESCOLAS.length}`;
-
-  const corpo = $("#tabela-resumo");
-  corpo.innerHTML = "";
-
-  ESCOLAS.forEach(escola => {
-    const atual = presencaAtual(escola);
-    const situacao = situacaoIFA(escola);
-
-    const linha = document.createElement("tr");
-
-    linha.innerHTML = `
-      <td>${escola.posicao}º</td>
-      <td>
-        <button
-          type="button"
-          class="escola-link"
-          data-codigo="${escola.codigo}"
-        >
-          ${nomeCompleto(escola)}
-        </button>
-      </td>
-      <td>${numero(escola.notaFinal)}</td>
-      <td>${percentual(atual.media)}</td>
-      <td>${percentual(escola.ifa / 100)}</td>
-      <td>
-        <span class="${classeSelo(situacao)}">${situacao}</span>
-      </td>
-    `;
-
-    corpo.appendChild(linha);
-  });
-
-  configurarLinksEscola();
+  renderizarTop5();
+  renderizarSupervisores();
+  renderizarProjecao();
 }
 
-/* =========================
-   Escolas
-   ========================= */
+// Critérios de ordenação reutilizados pelas telas Escolas e IFA.
+const ORDENACOES = {
+  ranking: (a, b) => a.posicao - b.posicao,
+  nota: (a, b) => b.notaFinal - a.notaFinal,
+  presenca: (a, b) => presencaAtual(b).media - presencaAtual(a).media,
+  ifa: (a, b) => b.ifa - a.ifa,
+  nome: (a, b) => a.nome.localeCompare(b.nome, "pt-BR"),
+  necessaria: (a, b) => (mediaNecessaria(a) ?? Infinity) - (mediaNecessaria(b) ?? Infinity)
+};
+
+const correspondeBusca = (escola, busca) =>
+  !busca || nomeCompleto(escola).toLowerCase().includes(busca);
 
 function preencherSupervisores() {
-  const supervisores = [...new Set(
-    ESCOLAS
-      .map(escola => escola.supervisor)
-      .filter(Boolean)
-  )].sort((a, b) => a.localeCompare(b, "pt-BR"));
-
   const select = $("#filtro-supervisor");
-
-  supervisores.forEach(supervisor => {
-    const opcao = document.createElement("option");
-    opcao.value = supervisor;
-    opcao.textContent = supervisor;
-    select.appendChild(opcao);
-  });
+  [...new Set(ESCOLAS.map(e => e.supervisor).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b, "pt-BR"))
+    .forEach(nome => select.add(new Option(nome, nome)));
 }
 
 function renderizarEscolas() {
   const busca = $("#busca-escola").value.trim().toLowerCase();
   const supervisor = $("#filtro-supervisor").value;
-  const ordenacao = $("#ordenar-escolas").value;
-
-  let lista = ESCOLAS.filter(escola => {
-    const texto = nomeCompleto(escola).toLowerCase();
-    const correspondeBusca = !busca || texto.includes(busca);
-    const correspondeSupervisor = !supervisor || escola.supervisor === supervisor;
-
-    return correspondeBusca && correspondeSupervisor;
-  });
-
-  if (ordenacao === "nota") {
-    lista.sort((a, b) => b.notaFinal - a.notaFinal);
-  } else if (ordenacao === "presenca") {
-    lista.sort((a, b) => presencaAtual(b).media - presencaAtual(a).media);
-  } else if (ordenacao === "ifa") {
-    lista.sort((a, b) => b.ifa - a.ifa);
-  } else if (ordenacao === "nome") {
-    lista.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
-  } else {
-    lista.sort((a, b) => a.posicao - b.posicao);
-  }
+  const lista = ESCOLAS
+    .filter(e => correspondeBusca(e, busca) && (!supervisor || e.supervisor === supervisor))
+    .sort(ORDENACOES[$("#ordenar-escolas").value] || ORDENACOES.ranking);
 
   $("#contador-escolas").textContent = `${lista.length} escola(s) exibida(s)`;
-
-  const corpo = $("#tabela-escolas");
-  corpo.innerHTML = "";
-
-  lista.forEach(escola => {
-    const atual = presencaAtual(escola);
-    const situacao = situacaoIFA(escola);
-
-    const linha = document.createElement("tr");
-
-    linha.innerHTML = `
-      <td>${escola.posicao}º</td>
-      <td>
-        <button
-          type="button"
-          class="escola-link"
-          data-codigo="${escola.codigo}"
-        >
-          ${nomeCompleto(escola)}
-        </button>
-      </td>
-      <td>${numero(escola.notaFinal)}</td>
-      <td>${percentual(atual.media)}</td>
-      <td>${percentual(escola.ifa / 100)}</td>
-      <td>
-        ${escola.supervisor || '<span class="sem-dado">Sem dado</span>'}
-      </td>
-      <td>
-        <span class="${classeSelo(situacao)}">${situacao}</span>
-      </td>
-    `;
-
-    corpo.appendChild(linha);
-  });
-
-  configurarLinksEscola();
+  preencherTabela("#tabela-escolas", lista.map(e => `
+    <tr>
+      <td>${e.posicao}º</td>
+      <td>${botaoEscola(e)}</td>
+      <td>${numero(e.notaFinal)}</td>
+      <td>${formatarPontos(presencaAtual(e).media)}</td>
+      <td>${formatarPontos(e.ifa)}</td>
+      <td>${e.supervisor ? escapar(e.supervisor) : '<span class="sem-dado">Sem dado</span>'}</td>
+      <td>${seloSituacao(situacaoIFA(e))}</td>
+    </tr>`), 7);
 }
 
-function configurarFiltrosEscolas() {
-  $("#busca-escola").addEventListener("input", renderizarEscolas);
-  $("#filtro-supervisor").addEventListener("change", renderizarEscolas);
-  $("#ordenar-escolas").addEventListener("change", renderizarEscolas);
+function renderizarPlataformas() {
+  const config = PLATAFORMAS[$("#selecionar-plataforma").value];
+  const busca = $("#busca-plataforma").value.trim().toLowerCase();
+
+  $("#titulo-plataforma-selecionada").textContent = config.nome;
+  $("#descricao-plataforma").textContent =
+    "Escolas ordenadas pelo indicador da plataforma selecionada. Escolas sem resultado não aparecem na lista.";
+
+  const lista = ESCOLAS
+    .filter(e => correspondeBusca(e, busca) && !semValor(e[config.campo]))
+    .sort((a, b) => b[config.campo] - a[config.campo]);
+
+  preencherTabela("#tabela-plataforma", lista.map((e, i) => `
+    <tr>
+      <td>${i + 1}º</td>
+      <td>${escapar(nomeCompleto(e))}</td>
+      <td>${numero(e[config.campo], config.casas)}</td>
+    </tr>`), 3);
+}
+
+function renderizarIFA() {
+  const busca = $("#busca-ifa").value.trim().toLowerCase();
+  const situacao = $("#filtro-situacao-ifa").value;
+  const lista = ESCOLAS
+    .filter(e => correspondeBusca(e, busca) && (!situacao || situacaoIFA(e) === situacao))
+    .sort(ORDENACOES[$("#ordenar-ifa").value] || ORDENACOES.nome);
+
+  $("#contador-ifa").textContent = `${lista.length} escola(s) exibida(s)`;
+  preencherTabela("#tabela-ifa", lista.map(e => {
+    const necessaria = mediaNecessaria(e);
+    const sit = situacaoIFA(e);
+    const atencao = sit === "Em acompanhamento" && necessaria >= LIMITE_ATENCAO;
+    return `
+    <tr class="${atencao ? "destaque-atencao" : ""}">
+      <td>${escapar(nomeCompleto(e))}</td>
+      <td>${formatarPontos(presencaAtual(e).media)}</td>
+      <td>${formatarPontos(e.ifa)}</td>
+      <td>${formatarPontos(CONFIG.ifaURE)}</td>
+      <td>${necessaria === null ? '<span class="sem-dado">Meta já atingida</span>' : formatarPontos(necessaria)}</td>
+      <td>${seloSituacao(sit)}</td>
+    </tr>`;
+  }), 6);
+}
+
+function atualizarTudo() {
+  renderizarVisaoGeral();
+  renderizarEscolas();
+  renderizarIFA();
+}
+
+/* =========================
+   6. Calculadora semanal
+   ========================= */
+
+function renderizarCalculadora() {
+  const semana = Number($("#semana-calculadora").value);
+  lancamentos[semana] ??= {};
+
+  $("#lancamento-grid").innerHTML = ESCOLAS.map(e => `
+    <article class="lancamento">
+      <h4>${escapar(nomeCompleto(e))}</h4>
+      <label class="sr-only" for="input-${e.codigo}">
+        Presença da semana ${semana} — ${escapar(nomeCompleto(e))}
+      </label>
+      <input type="number" id="input-${e.codigo}" min="0" max="100" step="0.01"
+             inputmode="decimal" value="${lancamentos[semana][e.codigo] ?? ""}" placeholder="Presença %">
+    </article>`).join("");
+}
+
+function calcularSemana() {
+  const semana = Number($("#semana-calculadora").value);
+  lancamentos[semana] ??= {};
+
+  ESCOLAS.forEach(e => {
+    const texto = $(`#input-${e.codigo}`).value.trim();
+    const valor = Number(texto);
+    // Ignora vazio e valores fora de 0–100 (evita distorcer o IFA).
+    if (texto === "" || valor < 0 || valor > 100) delete lancamentos[semana][e.codigo];
+    else lancamentos[semana][e.codigo] = valor;
+  });
+
+  salvarLancamentos();
+  atualizarTudo();
+  renderizarCalculadora();
+  avisar(`Presenças da semana ${semana} calculadas e salvas neste navegador.`);
+}
+
+function exportarLancamentos() {
+  const blob = new Blob([JSON.stringify(lancamentos, null, 2)], { type: "application/json" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "lancamentos-ifa-atualizados.json";
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
+function restaurarBase() {
+  if (!confirm("Deseja restaurar a base original e apagar os lançamentos salvos neste navegador?")) return;
+  localStorage.removeItem(CHAVE_ARMAZENAMENTO);
+  lancamentos = structuredClone(LANCAMENTOS_SEMANAIS);
+  atualizarTudo();
+  renderizarCalculadora();
+}
+
+/* =========================
+   7. Ficha da escola
+   ========================= */
+
+const indicadorFicha = (rotulo, valor) =>
+  `<article class="ficha-indicador"><span>${rotulo}</span><strong>${valor}</strong></article>`;
+
+function abrirFicha(codigo) {
+  const escola = buscarEscola(codigo);
+  if (!escola) return;
+
+  const necessaria = mediaNecessaria(escola);
+  $("#modal-titulo").textContent = nomeCompleto(escola);
+  $("#modal-conteudo").innerHTML = `
+    <section class="ficha-indicadores">
+      ${indicadorFicha("Ranking geral", `${escola.posicao}º lugar`)}
+      ${indicadorFicha("Nota final", numero(escola.notaFinal))}
+      ${indicadorFicha("Presença consolidada", formatarPontos(presencaAtual(escola).media))}
+      ${indicadorFicha("Projeção de fechamento", formatarPontos(presencaProjetada(escola)))}
+      ${indicadorFicha("IFA da escola", formatarPontos(escola.ifa))}
+      ${indicadorFicha("IFA da URE", formatarPontos(CONFIG.ifaURE))}
+      ${indicadorFicha("Média necessária", necessaria === null ? "Meta já atingida" : formatarPontos(necessaria))}
+    </section>
+    <p>${seloSituacao(situacaoIFA(escola))}</p>
+
+    <h3>Desempenho por plataforma</h3>
+    <div class="tabela-rolagem" tabindex="0" role="region" aria-label="Resultados por plataforma">
+      <table>
+        <caption class="sr-only">Resultados de ${escapar(nomeCompleto(escola))} por plataforma</caption>
+        <thead><tr><th scope="col">Plataforma</th><th scope="col">Resultado</th></tr></thead>
+        <tbody>
+          ${Object.values(PLATAFORMAS).map(p => `
+            <tr><td>${p.nome}</td><td>${numero(escola[p.campo], p.casas)}</td></tr>`).join("")}
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Supervisão</h3>
+    <p>${escola.supervisor ? escapar(escola.supervisor) : '<span class="sem-dado">Supervisor(a) não informado(a) na base.</span>'}</p>
+
+    <h3>Histórico no ranking geral</h3>
+    <p>Top 3: ${escola.top3} vez(es) • Top 5: ${escola.top5} vez(es) • Top 10: ${escola.top10} vez(es)
+       • Posição média: ${numero(escola.posicaoMedia, 1)}º lugar</p>`;
+
+  $("#modal-escola").showModal();
+}
+
+/* =========================
+   8. Inicialização
+   ========================= */
+
+function configurarEventos() {
+  // Abertura da ficha por delegação: vale para qualquer tabela, mesmo após re-renderizar.
+  document.addEventListener("click", evento => {
+    const botao = evento.target.closest(".escola-link");
+    if (botao) abrirFicha(botao.dataset.codigo);
+  });
+
+  // Navegação entre telas
+  $$(".menu-botao").forEach(botao => botao.addEventListener("click", () => {
+    $$(".menu-botao").forEach(b => {
+      b.classList.remove("ativo");
+      b.removeAttribute("aria-current");
+    });
+    botao.classList.add("ativo");
+    botao.setAttribute("aria-current", "page");
+
+    $$(".visao").forEach(secao => secao.classList.remove("ativa"));
+    $(`#view-${botao.dataset.view}`).classList.add("ativa");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }));
+
+  // Filtros: cada campo chama a renderização da sua tela
+  const ligar = (ids, evento, funcao) => ids.forEach(id => $(id).addEventListener(evento, funcao));
+  ligar(["#busca-escola"], "input", renderizarEscolas);
+  ligar(["#filtro-supervisor", "#ordenar-escolas"], "change", renderizarEscolas);
+  ligar(["#busca-plataforma"], "input", renderizarPlataformas);
+  ligar(["#selecionar-plataforma"], "change", renderizarPlataformas);
+  ligar(["#busca-ifa"], "input", renderizarIFA);
+  ligar(["#filtro-situacao-ifa", "#ordenar-ifa"], "change", renderizarIFA);
 
   $("#limpar-filtros").addEventListener("click", () => {
     $("#busca-escola").value = "";
     $("#filtro-supervisor").value = "";
     $("#ordenar-escolas").value = "ranking";
-
     renderizarEscolas();
   });
-}
-
-/* =========================
-   Plataformas
-   ========================= */
-
-function renderizarPlataformas() {
-  const chave = $("#selecionar-plataforma").value;
-  const busca = $("#busca-plataforma").value.trim().toLowerCase();
-  const config = PLATAFORMAS[chave];
-
-  $("#titulo-plataforma-selecionada").textContent = config.nome;
-
-  $("#descricao-plataforma").textContent =
-    "Escolas ordenadas pelo indicador da plataforma selecionada. Resultados ausentes são exibidos como “Sem dado”.";
-
-  let lista = ESCOLAS.filter(escola => {
-    if (!busca) {
-      return true;
-    }
-
-    return nomeCompleto(escola).toLowerCase().includes(busca);
-  });
-
-  lista = lista
-    .filter(escola => escola[config.campo] !== null && escola[config.campo] !== undefined)
-    .sort((a, b) => b[config.campo] - a[config.campo]);
-
-  const corpo = $("#tabela-plataforma");
-  corpo.innerHTML = "";
-
-  if (lista.length === 0) {
-    corpo.innerHTML = `
-      <tr>
-        <td colspan="3" class="sem-dado">
-          Nenhum resultado disponível para esta plataforma.
-        </td>
-      </tr>
-    `;
-
-    return;
-  }
-
-  lista.forEach((escola, indice) => {
-    const linha = document.createElement("tr");
-
-    linha.innerHTML = `
-      <td>${indice + 1}º</td>
-      <td>${nomeCompleto(escola)}</td>
-      <td>${numero(escola[config.campo], config.casas)}</td>
-    `;
-
-    corpo.appendChild(linha);
-  });
-}
-
-function configurarPlataformas() {
-  $("#selecionar-plataforma").addEventListener("change", renderizarPlataformas);
-  $("#busca-plataforma").addEventListener("input", renderizarPlataformas);
-}
-
-/* =========================
-   Aluno Presente / IFA
-   ========================= */
-
-function renderizarIFA() {
-  const busca = $("#busca-ifa").value.trim().toLowerCase();
-  const situacaoFiltro = $("#filtro-situacao-ifa").value;
-  const ordenacao = $("#ordenar-ifa").value;
-
-  let lista = ESCOLAS.filter(escola => {
-    const situacao = situacaoIFA(escola);
-    const correspondeBusca = !busca || nomeCompleto(escola).toLowerCase().includes(busca);
-    const correspondeSituacao = !situacaoFiltro || situacao === situacaoFiltro;
-
-    return correspondeBusca && correspondeSituacao;
-  });
-
-  if (ordenacao === "presenca") {
-    lista.sort((a, b) => presencaAtual(b).media - presencaAtual(a).media);
-  } else if (ordenacao === "ifa") {
-    lista.sort((a, b) => b.ifa - a.ifa);
-  } else if (ordenacao === "necessaria") {
-    lista.sort((a, b) => {
-      const valorA = mediaNecessaria(a);
-      const valorB = mediaNecessaria(b);
-
-      if (valorA === null) return 1;
-      if (valorB === null) return -1;
-
-      return valorA - valorB;
-    });
-  } else {
-    lista.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
-  }
-
-  $("#contador-ifa").textContent = `${lista.length} escola(s) exibida(s)`;
-
-  const corpo = $("#tabela-ifa");
-  corpo.innerHTML = "";
-
-  lista.forEach(escola => {
-    const atual = presencaAtual(escola);
-    const necessaria = mediaNecessaria(escola);
-    const situacao = situacaoIFA(escola);
-
-    const linha = document.createElement("tr");
-
-    if (situacao === "Em acompanhamento" && necessaria >= 90) {
-      linha.classList.add("destaque-atencao");
-    }
-
-    linha.innerHTML = `
-      <td>${nomeCompleto(escola)}</td>
-      <td>${percentual(atual.media)}</td>
-      <td>${percentual(escola.ifa / 100)}</td>
-      <td>${percentual(CONFIG.ifaURE / 100)}</td>
-      <td>
-        ${
-          necessaria === null
-            ? '<span class="sem-dado">Meta já atingida</span>'
-            : percentual(necessaria)
-        }
-      </td>
-      <td>
-        <span class="${classeSelo(situacao)}">${situacao}</span>
-      </td>
-    `;
-
-    corpo.appendChild(linha);
-  });
-}
-
-function renderizarCalculadora() {
-  const semana = Number($("#semana-calculadora").value);
-  const container = $("#lancamento-grid");
-
-  container.innerHTML = "";
-
-  if (!lancamentos[semana]) {
-    lancamentos[semana] = {};
-  }
-
-  ESCOLAS.forEach(escola => {
-    const codigo = escola.codigo;
-    const valorSalvo = lancamentos[semana][codigo] ?? "";
-
-    const item = document.createElement("article");
-    item.className = "lancamento";
-
-    item.innerHTML = `
-      <h4>${nomeCompleto(escola)}</h4>
-
-      <label class="sr-only" for="input-${codigo}">
-        Presença da semana ${semana} — ${nomeCompleto(escola)}
-      </label>
-
-      <input
-        type="number"
-        id="input-${codigo}"
-        class="input-semana"
-        min="0"
-        max="100"
-        step="0.01"
-        value="${valorSalvo}"
-        placeholder="Presença %"
-      >
-    `;
-
-    container.appendChild(item);
-  });
-}
-
-function calcularSemana() {
-  const semana = Number($("#semana-calculadora").value);
-
-  if (!lancamentos[semana]) {
-    lancamentos[semana] = {};
-  }
-
-  ESCOLAS.forEach(escola => {
-    const codigo = escola.codigo;
-    const campo = $(`#input-${codigo}`);
-    const valor = campo.value.trim();
-
-    if (valor === "") {
-      delete lancamentos[semana][codigo];
-    } else {
-      lancamentos[semana][codigo] = Number(valor);
-    }
-  });
-
-  salvarLancamentos();
-
-  renderizarCalculadora();
-  renderizarIFA();
-  renderizarVisaoGeral();
-
-  alert(`Presenças da semana ${semana} calculadas e salvas neste navegador.`);
-}
-
-function exportarLancamentos() {
-  const conteudo = JSON.stringify(lancamentos, null, 2);
-  const blob = new Blob([conteudo], { type: "application/json" });
-
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = "lancamentos-ifa-atualizados.json";
-  link.click();
-
-  URL.revokeObjectURL(link.href);
-}
-
-function restaurarBase() {
-  const confirmacao = confirm(
-    "Deseja restaurar a base original e apagar os lançamentos salvos neste navegador?"
-  );
-
-  if (!confirmacao) {
-    return;
-  }
-
-  localStorage.removeItem(CHAVE_ARMAZENAMENTO);
-  lancamentos = structuredClone(LANCAMENTOS_SEMANAIS);
-
-  renderizarCalculadora();
-  renderizarIFA();
-  renderizarVisaoGeral();
-}
-
-function configurarIFA() {
-  $("#busca-ifa").addEventListener("input", renderizarIFA);
-  $("#filtro-situacao-ifa").addEventListener("change", renderizarIFA);
-  $("#ordenar-ifa").addEventListener("change", renderizarIFA);
-
   $("#limpar-ifa").addEventListener("click", () => {
     $("#busca-ifa").value = "";
     $("#filtro-situacao-ifa").value = "";
     $("#ordenar-ifa").value = "presenca";
-
     renderizarIFA();
   });
 
+  // Calculadora
   $("#semana-calculadora").addEventListener("change", renderizarCalculadora);
   $("#calcular-semana").addEventListener("click", calcularSemana);
   $("#exportar-lancamentos").addEventListener("click", exportarLancamentos);
   $("#restaurar-base").addEventListener("click", restaurarBase);
-}
 
-/* =========================
-   Ficha da escola
-   ========================= */
-
-function abrirFicha(codigo) {
-  const escola = buscarEscolaPorCodigo(codigo);
-
-  if (!escola) {
-    return;
-  }
-
-  const atual = presencaAtual(escola);
-  const necessaria = mediaNecessaria(escola);
-  const situacao = situacaoIFA(escola);
-
-  $("#modal-titulo").textContent = nomeCompleto(escola);
-
-  $("#modal-conteudo").innerHTML = `
-    <section class="ficha-indicadores">
-      <article class="ficha-indicador">
-        <span>Ranking geral</span>
-        <strong>${escola.posicao}º lugar</strong>
-      </article>
-
-      <article class="ficha-indicador">
-        <span>Nota final</span>
-        <strong>${numero(escola.notaFinal)}</strong>
-      </article>
-
-      <article class="ficha-indicador">
-        <span>Presença consolidada</span>
-        <strong>${percentual(atual.media)}</strong>
-      </article>
-
-      <article class="ficha-indicador">
-        <span>IFA da escola</span>
-        <strong>${percentual(escola.ifa / 100)}</strong>
-      </article>
-
-      <article class="ficha-indicador">
-        <span>IFA da URE</span>
-        <strong>${percentual(CONFIG.ifaURE / 100)}</strong>
-      </article>
-
-      <article class="ficha-indicador">
-        <span>Média necessária</span>
-        <strong>
-          ${
-            necessaria === null
-              ? "Meta já atingida"
-              : percentual(necessaria)
-          }
-        </strong>
-      </article>
-    </section>
-
-    <p>
-      <span class="${classeSelo(situacao)}">${situacao}</span>
-    </p>
-
-    <h3>Desempenho por plataforma</h3>
-
-    <section class="tabela-rolagem">
-      <table>
-        <caption class="sr-only">
-          Resultados de ${nomeCompleto(escola)} por plataforma
-        </caption>
-
-        <thead>
-          <tr>
-            <th scope="col">Plataforma</th>
-            <th scope="col">Resultado</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          ${Object.entries(PLATAFORMAS).map(([chave, config]) => `
-            <tr>
-              <td>${config.nome}</td>
-              <td>${numero(escola[config.campo], config.casas)}</td>
-            </tr>
-          `).join("")}
-        </tbody>
-      </table>
-    </section>
-
-    <h3>Supervisão</h3>
-    <p>
-      ${
-        escola.supervisor ||
-        '<span class="sem-dado">Supervisor(a) não informado(a) na base.</span>'
-      }
-    </p>
-
-    <h3>Posição no ranking geral</h3>
-    <p>
-      Top 3: ${escola.top3} vez(es) •
-      Top 5: ${escola.top5} vez(es) •
-      Top 10: ${escola.top10} vez(es) •
-      Posição média: ${numero(escola.posicaoMedia, 1)}º lugar
-    </p>
-  `;
-
-  const modal = $("#modal-escola");
-  modal.showModal();
-}
-
-function fecharFicha() {
-  $("#modal-escola").close();
-}
-
-function configurarLinksEscola() {
-  $$(".escola-link").forEach(botao => {
-    botao.addEventListener("click", () => {
-      abrirFicha(botao.dataset.codigo);
-    });
-  });
-}
-
-function configurarModal() {
-  $("#fechar-modal").addEventListener("click", fecharFicha);
-
+  // Modal
+  $("#fechar-modal").addEventListener("click", () => $("#modal-escola").close());
   $("#modal-escola").addEventListener("click", evento => {
-    if (evento.target.id === "modal-escola") {
-      fecharFicha();
-    }
+    if (evento.target.id === "modal-escola") $("#modal-escola").close();
   });
 }
-
-/* =========================
-   Inicialização
-   ========================= */
 
 function iniciar() {
-  configurarNavegacao();
+  configurarEventos();
   preencherSupervisores();
-  configurarFiltrosEscolas();
-  configurarPlataformas();
-  configurarIFA();
-  configurarModal();
-
-  renderizarVisaoGeral();
-  renderizarEscolas();
+  atualizarTudo();
   renderizarPlataformas();
-  renderizarIFA();
   renderizarCalculadora();
 }
 
