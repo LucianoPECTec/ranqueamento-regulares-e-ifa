@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Monitoramento Escolar — Escolas Regulares — URE São José do Rio Preto</title>
+  <meta name="description" content="Painel interno de acompanhamento do desempenho multissistema, presença escolar e IFA das escolas regulares da URE São José do Rio Preto.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<!--
+  index.html — estrutura do painel (sem regras de cálculo).
+  Os atributos id são usados pelo app.js: não renomeie sem ajustar o script.
+  Escopo do painel: ESCOLAS REGULARES.
+-->
+<body>
+
+  <!-- Atalho para quem navega por teclado ou leitor de tela -->
+  <a class="pular-link" href="#conteudo">Pular para o conteúdo</a>
+
+  <!-- Mensagens de status lidas por leitores de tela (usado pelo app.js) -->
+  <p id="status-painel" class="sr-only" role="status" aria-live="polite"></p>
+
+  <!-- ========== CABEÇALHO ========== -->
+  <header class="topbar">
+    <div class="container identidade">
+      <div>
+        <p class="topbar-tag">Unidade Regional de Ensino</p>
+        <h1>São José do Rio Preto</h1>
+        <p class="topbar-subtitle">Monitoramento Escolar — Desempenho Multissistema e IFA</p>
+        <p class="faixa-regulares">Somente escolas regulares</p>
+      </div>
+
+      <aside class="periodo" aria-label="Período dos dados">
+        <h2 class="periodo-titulo">Período do levantamento</h2>
+        <p><strong>1ª semana até a semana 37</strong></p>
+        <p class="periodo-detalle">Projeção de IFA: semanas 38 a 42</p>
+      </aside>
+    </div>
+
+  </header>
+
+  <!-- Menu: fica FORA do <header> para poder ficar fixo no topo (ver styles.css) -->
+  <nav class="navegacao" aria-label="Navegação principal">
+      <ul class="container menu">
+        <li><button type="button" class="menu-botao ativo" data-view="geral" aria-current="page">Visão geral</button></li>
+        <li><button type="button" class="menu-botao" data-view="supervisores">Supervisores</button></li>
+        <li><button type="button" class="menu-botao" data-view="escolas">Escolas</button></li>
+        <li><button type="button" class="menu-botao" data-view="plataformas">Plataformas</button></li>
+        <li><button type="button" class="menu-botao" data-view="ifa">Aluno Presente / IFA</button></li>
+        <li><button type="button" class="menu-botao" data-view="paulista">Prova Paulista</button></li>
+        <li><button type="button" class="menu-botao" data-view="graficos">Gráficos</button></li>
+        <li><button type="button" class="menu-botao" data-view="sobre">Sobre os dados</button></li>
+      </ul>
+    </nav>
+
+  <main id="conteudo" class="container">
+
+    <aside class="aviso" aria-label="Aviso institucional">
+      <p>
+        <strong>Painel exclusivo das escolas regulares.</strong>
+        Não inclui outras modalidades de ensino. Uso interno da URE São José do Rio Preto, para apoio à gestão,
+        ao acompanhamento pedagógico e ao planejamento.
+      </p>
+      <p>
+        Levantamento da <strong>1ª semana até a semana 37</strong>. As projeções de IFA consideram as
+        <strong>semanas 38 a 42</strong>, com encerramento previsto na segunda semana de novembro.
+      </p>
+    </aside>
+
+    <!-- ========== VISÃO GERAL ========== -->
+    <section id="view-geral" class="visao ativa" aria-labelledby="titulo-geral">
+      <h2 id="titulo-geral">Visão geral</h2>
+      <p class="descricao">Panorama das escolas regulares monitoradas: desempenho multissistema, presença escolar e IFA.</p>
+
+      <!-- Top 5: o app.js destaca o 1º, 2º e 3º lugar -->
+      <section class="painel" aria-labelledby="titulo-top5">
+        <header class="painel-cabecalho">
+          <h3 id="titulo-top5">Top 5 do ranking geral</h3>
+          <p>Desempenho multissistema até a semana 37.</p>
+        </header>
+        <ol id="top5-ranking" class="top5"></ol>
+      </section>
+
+      <section class="indicadores" aria-label="Indicadores gerais">
+        <article class="indicador">
+          <h3>Escolas regulares monitoradas</h3>
+          <p class="valor" id="kpi-escolas">—</p>
+          <p class="apoio">Escolas presentes na base do painel</p>
+        </article>
+        <article class="indicador">
+          <h3>IFA da URE</h3>
+          <p class="valor">83,3%</p>
+          <p class="apoio">Índice de presença anual de referência</p>
+        </article>
+        <article class="indicador">
+          <h3>Projeção de fechamento</h3>
+          <p class="valor" id="kpi-projecao">—</p>
+          <p class="apoio">Média de presença prevista na semana 42</p>
+        </article>
+        <article class="indicador">
+          <h3>1º lugar — ranking geral</h3>
+          <p class="valor" id="kpi-ranking">—</p>
+          <p class="apoio">Desempenho multissistema</p>
+        </article>
+        <article class="indicador">
+          <h3>Maior nota final</h3>
+          <p class="valor" id="kpi-nota">—</p>
+          <p class="apoio">Resultado consolidado</p>
+        </article>
+        <article class="indicador">
+          <h3>Maior presença</h3>
+          <p class="valor" id="kpi-presenca">—</p>
+          <p class="apoio">Presença consolidada até o último lançamento</p>
+        </article>
+        <article class="indicador">
+          <h3>Dentro do IFA</h3>
+          <p class="valor" id="kpi-ifa">—</p>
+          <p class="apoio">Escolas que já atingiram ou superaram o IFA</p>
+        </article>
+      </section>
+
+      <!-- Linha do tempo: atualiza sozinha conforme as semanas são lançadas -->
+      <section class="painel" aria-labelledby="titulo-projecao">
+        <header class="painel-cabecalho">
+          <h3 id="titulo-projecao">Próximas semanas até o fim do período</h3>
+          <p>Semanas 38 a 42. O status muda automaticamente quando a presença é lançada.</p>
+        </header>
+        <ol id="linha-projecao" class="linha-projecao"></ol>
+      </section>
+
+      <section class="painel" aria-labelledby="titulo-resumo">
+        <header class="painel-cabecalho">
+          <h3 id="titulo-resumo">Resumo das escolas</h3>
+          <p>Ordenado pelo ranking geral. Selecione a escola para ver os detalhes.</p>
+        </header>
+        <div class="tabela-rolagem" tabindex="0" role="region" aria-label="Tabela: resumo das escolas">
+          <table>
+            <caption class="sr-only">Resumo das escolas regulares monitoradas pela URE</caption>
+            <thead>
+              <tr>
+                <th scope="col">Posição</th>
+                <th scope="col">Escola</th>
+                <th scope="col">Nota final</th>
+                <th scope="col">Presença</th>
+                <th scope="col">IFA</th>
+                <th scope="col">Situação</th>
+              </tr>
+            </thead>
+            <tbody id="tabela-resumo"></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+
+    <!-- ========== SUPERVISORES ========== -->
+    <section id="view-supervisores" class="visao" aria-labelledby="titulo-supervisores">
+      <h2 id="titulo-supervisores">Ranking dos supervisores</h2>
+      <p class="descricao">
+        Classificação pela média da nota final das escolas regulares de cada supervisor(a), com desempate pela presença média.
+        Escolas sem supervisor(a) informado(a) na base não entram neste ranking.
+      </p>
+
+      <section class="painel" aria-labelledby="titulo-tabela-supervisores">
+        <header class="painel-cabecalho">
+          <h3 id="titulo-tabela-supervisores">Supervisores por desempenho das escolas</h3>
+        </header>
+        <div class="tabela-rolagem" tabindex="0" role="region" aria-label="Tabela: ranking dos supervisores">
+          <table>
+            <caption class="sr-only">Ranking dos supervisores a partir do desempenho das suas escolas</caption>
+            <thead>
+              <tr>
+                <th scope="col">Posição</th>
+                <th scope="col">Supervisor(a)</th>
+                <th scope="col">Escolas</th>
+                <th scope="col">Nota média</th>
+                <th scope="col">Presença média</th>
+                <th scope="col">Dentro do IFA</th>
+              </tr>
+            </thead>
+            <tbody id="tabela-supervisores"></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+
+    <!-- ========== ESCOLAS ========== -->
+    <section id="view-escolas" class="visao" aria-labelledby="titulo-escolas">
+      <h2 id="titulo-escolas">Escolas</h2>
+      <p class="descricao">Consulte os indicadores por escola, organize a tabela e acesse a ficha individual.</p>
+
+      <form class="filtros" onsubmit="return false" aria-label="Filtros das escolas">
+        <div class="campo">
+          <label for="busca-escola">Escola</label>
+          <select id="busca-escola" name="busca-escola" class="seletor-escola"></select>
+        </div>
+        <div class="campo">
+          <label for="filtro-supervisor">Supervisor(a)</label>
+          <select id="filtro-supervisor" name="filtro-supervisor">
+            <option value="">Todos</option>
+          </select>
+        </div>
+        <div class="campo">
+          <label for="ordenar-escolas">Ordenar por</label>
+          <select id="ordenar-escolas" name="ordenar-escolas">
+            <option value="ranking">Posição no ranking geral</option>
+            <option value="nota">Maior nota final</option>
+            <option value="presenca">Maior presença</option>
+            <option value="ifa">Maior IFA</option>
+            <option value="nome">Nome da escola</option>
+          </select>
+        </div>
+        <div class="campo campo-botao">
+          <button type="reset" class="botao-secundario" id="limpar-filtros">Limpar filtros</button>
+        </div>
+      </form>
+
+      <section class="painel" aria-labelledby="titulo-classificacao">
+        <header class="painel-cabecalho">
+          <h3 id="titulo-classificacao">Classificação das escolas</h3>
+          <p id="contador-escolas" aria-live="polite">—</p>
+        </header>
+        <div class="tabela-rolagem" tabindex="0" role="region" aria-label="Tabela: classificação das escolas">
+          <table>
+            <caption class="sr-only">Classificação das escolas por desempenho, presença e IFA</caption>
+            <thead>
+              <tr>
+                <th scope="col">Posição</th>
+                <th scope="col">Escola</th>
+                <th scope="col">Nota final</th>
+                <th scope="col">Presença</th>
+                <th scope="col">IFA</th>
+                <th scope="col">Supervisor(a)</th>
+                <th scope="col">Situação</th>
+              </tr>
+            </thead>
+            <tbody id="tabela-escolas"></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+
+    <!-- ========== PLATAFORMAS ========== -->
+    <section id="view-plataformas" class="visao" aria-labelledby="titulo-plataformas">
+      <h2 id="titulo-plataformas">Plataformas</h2>
+      <p class="descricao">Resultado das escolas em cada plataforma, para identificar pontos fortes e oportunidades de apoio.</p>
+
+      <div class="plataformas-controles">
+        <!-- Os botões das plataformas são criados pelo app.js -->
+        <div id="abas-plataforma" class="abas-plataforma" role="group" aria-label="Escolher plataforma"></div>
+        <form class="filtros" onsubmit="return false" aria-label="Filtro das plataformas">
+          <div class="campo">
+            <label for="busca-plataforma">Escola</label>
+            <select id="busca-plataforma" name="busca-plataforma" class="seletor-escola"></select>
+          </div>
+        </form>
+      </div>
+
+      <section class="painel" aria-labelledby="titulo-plataforma-selecionada">
+        <header class="painel-cabecalho">
+          <h3 id="titulo-plataforma-selecionada">Tarefa SP</h3>
+          <p id="descricao-plataforma">Escolas ordenadas pelo indicador da plataforma selecionada.</p>
+        </header>
+        <p id="resumo-plataforma" class="resumo-plataforma"></p>
+        <ol id="barras-plataforma" class="barras"></ol>
+        <p id="sem-dado-plataforma" class="sem-dado"></p>
+      </section>
+
+      <section class="calculadora" aria-labelledby="titulo-calc-plataformas">
+        <header class="calculadora-cabecalho">
+          <h3 id="titulo-calc-plataformas">Lançamento semanal das plataformas</h3>
+          <p>Escolha a plataforma, a semana e quem está lançando. Os valores ficam salvos na nuvem para todos.</p>
+        </header>
+
+        <fieldset>
+          <legend>Lançamento por plataforma</legend>
+          <div class="calculadora-controles controles-4-col">
+            <div class="campo">
+              <label for="plat-selecionada">Plataforma</label>
+              <select id="plat-selecionada" name="plat-selecionada"></select>
+            </div>
+            <div class="campo">
+              <label for="semana-plat">Semana</label>
+              <select id="semana-plat" name="semana-plat">
+                <option value="1">Semana 1</option>
+                <option value="2">Semana 2</option>
+                <option value="3">Semana 3</option>
+                <option value="4">Semana 4</option>
+                <option value="5">Semana 5</option>
+                <option value="6">Semana 6</option>
+                <option value="7">Semana 7</option>
+                <option value="8">Semana 8</option>
+                <option value="9">Semana 9</option>
+                <option value="10">Semana 10</option>
+                <option value="11">Semana 11</option>
+                <option value="12">Semana 12</option>
+                <option value="13">Semana 13</option>
+                <option value="14">Semana 14</option>
+                <option value="15">Semana 15</option>
+                <option value="16">Semana 16</option>
+                <option value="17">Semana 17</option>
+                <option value="18">Semana 18</option>
+                <option value="19">Semana 19</option>
+                <option value="20">Semana 20</option>
+                <option value="21">Semana 21</option>
+                <option value="22">Semana 22</option>
+                <option value="23">Semana 23</option>
+                <option value="24">Semana 24</option>
+                <option value="25">Semana 25</option>
+                <option value="26">Semana 26</option>
+                <option value="27">Semana 27</option>
+                <option value="28">Semana 28</option>
+                <option value="29">Semana 29</option>
+                <option value="30">Semana 30</option>
+                <option value="31">Semana 31</option>
+                <option value="32">Semana 32</option>
+                <option value="33">Semana 33</option>
+                <option value="34">Semana 34</option>
+                <option value="35">Semana 35</option>
+                <option value="36">Semana 36</option>
+                <option value="37" selected>Semana 37</option>
+                <option value="38">Semana 38</option>
+                <option value="39">Semana 39</option>
+                <option value="40">Semana 40</option>
+                <option value="41">Semana 41</option>
+                <option value="42">Semana 42</option>
+              </select>
+            </div>
+            <div class="campo">
+              <label for="responsavel-plat">Quem lança</label>
+              <select id="responsavel-plat" name="responsavel-plat"></select>
+            </div>
+            <div class="campo">
+              <label for="busca-plat-calc">Escola</label>
+              <select id="busca-plat-calc" name="busca-plat-calc" class="seletor-escola"></select>
+            </div>
+          </div>
+
+          <div class="lancamentos-container">
+            <div class="lancamentos-header"><span>Escola</span><span>Valor da semana</span></div>
+            <div class="lancamentos-lista" id="lancamento-grid-plat"></div>
+          </div>
+
+          <div class="acoes-calculadora">
+            <span class="sem-dado">Só são enviados os campos que você alterou.</span>
+            <button type="button" class="botao-primario botao-salvar" id="salvar-plat">Salvar plataforma</button>
+          </div>
+        </fieldset>
+      </section>
+    </section>
+
+    <!-- ========== ALUNO PRESENTE / IFA ========== -->
+    <section id="view-ifa" class="visao" aria-labelledby="titulo-ifa">
+      <h2 id="titulo-ifa">Aluno Presente / IFA</h2>
+      <p class="descricao">Presença consolidada, IFA de cada escola e média necessária nas semanas 38 a 42 para atingir a meta.</p>
+
+      <section class="calculadora" aria-labelledby="titulo-calculadora">
+        <header class="calculadora-cabecalho">
+          <h3 id="titulo-calculadora">Calculadora semanal do IFA</h3>
+          <p>Informe a presença da semana (de 0 a 100). O painel recalcula a média consolidada, a média necessária e a situação de cada escola.</p>
+          <!-- Mensagem de conexão com o Firebase (escrita pelo app.js) -->
+          <p id="status-sincronizacao" class="status-sincronizacao" role="status">Conectando à base Firebase…</p>
+        </header>
+
+        <fieldset>
+          <legend>Lançamento da semana</legend>
+          <div class="calculadora-controles">
+            <div class="campo">
+              <label for="semana-calculadora">Semana</label>
+              <select id="semana-calculadora" name="semana-calculadora">
+                <option value="38">Semana 38</option>
+                <option value="39">Semana 39</option>
+                <option value="40">Semana 40</option>
+                <option value="41">Semana 41</option>
+                <option value="42">Semana 42</option>
+              </select>
+            </div>
+            <div class="campo">
+              <label for="responsavel-lancamento">Supervisor(a)</label>
+              <select id="responsavel-lancamento" name="responsavel-lancamento"></select>
+            </div>
+            <div class="campo">
+              <label for="busca-calculadora">Escola</label>
+              <select id="busca-calculadora" name="busca-calculadora" class="seletor-escola"></select>
+            </div>
+          </div>
+
+          <div class="lancamentos-container">
+            <div class="lancamentos-header"><span>Escola</span><span>Presença da semana (%)</span></div>
+            <div class="lancamentos-lista" id="lancamento-grid"></div>
+          </div>
+
+          <div class="acoes-calculadora">
+            <span class="sem-dado">Os lançamentos ficam salvos na nuvem para qualquer pessoa e dispositivo.</span>
+            <button type="button" class="botao-primario botao-salvar" id="calcular-semana">Calcular e salvar semana</button>
+          </div>
+        </fieldset>
+      </section>
+
+      <aside class="orientacao" aria-label="Como interpretar a situação do IFA">
+        <h3>Como interpretar a situação</h3>
+        <ul>
+          <li><strong>Dentro do IFA:</strong> a escola já atingiu ou superou seu IFA com os dados lançados.</li>
+          <li><strong>Em acompanhamento:</strong> ainda é possível atingir o IFA, desde que a escola alcance a média indicada até a semana 42.</li>
+          <li><strong>Fora do alcance da meta:</strong> mesmo com 100% de presença nas semanas restantes, o IFA não será alcançado no período.</li>
+        </ul>
+      </aside>
+
+      <form class="filtros" onsubmit="return false" aria-label="Filtros de presença e IFA">
+        <div class="campo">
+          <label for="busca-ifa">Escola</label>
+          <select id="busca-ifa" name="busca-ifa" class="seletor-escola"></select>
+        </div>
+        <div class="campo">
+          <label for="filtro-situacao-ifa">Situação</label>
+          <select id="filtro-situacao-ifa" name="filtro-situacao-ifa">
+            <option value="">Todas</option>
+            <option value="Dentro do IFA">Dentro do IFA</option>
+            <option value="Em acompanhamento">Em acompanhamento</option>
+            <option value="Fora do alcance da meta">Fora do alcance da meta</option>
+          </select>
+        </div>
+        <div class="campo">
+          <label for="ordenar-ifa">Ordenar por</label>
+          <select id="ordenar-ifa" name="ordenar-ifa">
+            <option value="presenca">Maior presença</option>
+            <option value="ifa">Maior IFA</option>
+            <option value="necessaria">Menor média necessária</option>
+            <option value="nome">Nome da escola</option>
+          </select>
+        </div>
+        <div class="campo campo-botao">
+          <button type="reset" class="botao-secundario" id="limpar-ifa">Limpar filtros</button>
+        </div>
+      </form>
+
+      <section class="painel" aria-labelledby="titulo-presenca-ifa">
+        <header class="painel-cabecalho">
+          <h3 id="titulo-presenca-ifa">Presença e IFA por escola</h3>
+          <p id="contador-ifa" aria-live="polite">—</p>
+        </header>
+        <div class="tabela-rolagem" tabindex="0" role="region" aria-label="Tabela: presença e IFA por escola">
+          <table>
+            <caption class="sr-only">Presença consolidada, IFA e média necessária por escola</caption>
+            <thead>
+              <tr>
+                <th scope="col">Escola</th>
+                <th scope="col">Presença consolidada</th>
+                <th scope="col">IFA da escola</th>
+                <th scope="col">IFA da URE</th>
+                <th scope="col">Média necessária até a semana 42</th>
+                <th scope="col">Situação</th>
+              </tr>
+            </thead>
+            <tbody id="tabela-ifa"></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+
+    <!-- ========== PROVA PAULISTA ========== -->
+    <section id="view-paulista" class="visao" aria-labelledby="titulo-paulista">
+      <h2 id="titulo-paulista">Prova Paulista — desempenho e melhorias</h2>
+      <p class="descricao">
+        Resultados do 1º ao 3º bimestre: escolas que mais cresceram, que se mantiveram na meta, que regrediram e
+        que pedem mais atenção, além da evolução dos componentes na URE.
+      </p>
+      <!-- Preenchido pelo paulista.js -->
+      <div id="area-paulista"></div>
+    </section>
+
+    <!-- ========== GRÁFICOS ========== -->
+    <section id="view-graficos" class="visao" aria-labelledby="titulo-graficos">
+      <h2 id="titulo-graficos">Gráficos</h2>
+      <p class="descricao">
+        Gráficos prontos para apresentações e relatórios. Baixe cada um em PNG ou SVG; eles se atualizam
+        sozinhos quando novos lançamentos são salvos.
+      </p>
+      <p><button type="button" class="botao-secundario" id="baixar-todos">Baixar todos (PNG)</button></p>
+      <!-- Preenchido pelo graficos.js -->
+      <div id="area-graficos"></div>
+    </section>
+
+    <!-- ========== SOBRE OS DADOS ========== -->
+    <section id="view-sobre" class="visao" aria-labelledby="titulo-sobre">
+      <h2 id="titulo-sobre">Sobre os dados</h2>
+
+      <article class="painel">
+        <h3>Escopo</h3>
+        <p>Este painel considera <strong>somente escolas regulares</strong> da URE São José do Rio Preto.</p>
+
+        <h3>Período analisado</h3>
+        <p>
+          Levantamento da <strong>1ª semana até a semana 37</strong>. As projeções de IFA consideram as
+          <strong>semanas 38 a 42</strong>, com encerramento previsto na segunda semana de novembro.
+        </p>
+
+        <h3>Finalidade</h3>
+        <p>
+          Uso interno da Unidade Regional de Ensino, para organizar informações já levantadas e apoiar o acompanhamento
+          pedagógico, a supervisão e o planejamento de ações.
+        </p>
+
+        <h3>Indicadores apresentados</h3>
+        <ul>
+          <li>Ranking geral de desempenho multissistema e Top 5.</li>
+          <li>Ranking dos supervisores, pela média da nota final das suas escolas.</li>
+          <li>Resultados por plataforma: Tarefa SP, Redação SP, Leia SP, SPeak, Alura, Matific e Khan Academy.</li>
+          <li>Presença escolar consolidada e IFA por escola; IFA de referência da URE: 83,3%.</li>
+          <li>Média necessária e projeção de fechamento até a semana 42.</li>
+          <li>Prova Paulista (1º ao 3º bimestre): desempenho, crescimento, regressão, pontos de atenção e componentes.</li>
+          <li>Gráficos para download em PNG e SVG.</li>
+          <li>Os lançamentos semanais de presença e de plataformas ficam salvos na nuvem (Firebase), para todos os usuários.</li>
+        </ul>
+
+        <h3>Como a projeção é calculada</h3>
+        <p>
+          Semanas ainda sem lançamento repetem a média de presença atual da escola. Ao lançar uma semana,
+          todos os indicadores são recalculados automaticamente.
+        </p>
+
+        <h3>Observações</h3>
+        <p>
+          Resultados ausentes aparecem como “Sem dado” e não são tratados como zero. As projeções apoiam a gestão
+          e não substituem os resultados oficiais da Secretaria da Educação do Estado de São Paulo.
+        </p>
+      </article>
+    </section>
+
+  </main>
+
+  <!-- ========== RODAPÉ ========== -->
+  <footer class="rodape">
+    <div class="container">
+      <p>
+        <strong>Monitoramento Escolar — Escolas Regulares — URE São José do Rio Preto.</strong><br>
+        Levantamento até a semana 37. Projeção de IFA para as semanas 38 a 42.
+      </p>
+      <p class="rodape-pequeno">
+        Desenvolvido por Luciano Julio da Silva — PEC Desenvolvimento Curricular de Tecnologia da URE de São José do Rio Preto,
+        com apoio de inteligência artificial (Perplexity, 2026).
+      </p>
+    </div>
+  </footer>
+
+  <!-- Ficha individual da escola (preenchida pelo app.js) -->
+  <dialog id="modal-escola" class="modal" aria-labelledby="modal-titulo">
+    <article>
+      <header class="modal-cabecalho">
+        <h2 id="modal-titulo">Escola</h2>
+        <button type="button" class="modal-fechar" id="fechar-modal" aria-label="Fechar ficha da escola">×</button>
+      </header>
+      <div id="modal-conteudo" class="modal-conteudo"></div>
+    </article>
+  </dialog>
+
+  <!-- Firebase (bancos de dados na nuvem). As chaves ficam no app.js. -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+  <!-- ORDEM IMPORTA: dados -> app -> módulos que usam as funções do app -->
+  <script src="dados.js"></script>
+  <script src="dados-paulista.js"></script>
+  <script src="app.js"></script>
+  <script src="graficos.js"></script>
+  <script src="analise-paulista.js"></script>
+  <script src="paulista.js"></script>
+
+  <!-- Dropdowns de escola: preenchidos com as escolas do dados.js, em ordem alfabética.
+       O valor de cada opção é "NOME - CÓDIGO", o mesmo texto que o app.js já usa na busca. -->
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      // Se o dados.js não carregou (ex.: prévia do index sozinho), não faz nada e não dá erro
+      if (typeof ESCOLAS === "undefined") return;
+      var escolas = ESCOLAS.slice().sort(function (a, b) { return a.nome.localeCompare(b.nome, "pt-BR"); });
+      document.querySelectorAll("select.seletor-escola").forEach(function (lista) {
+        lista.add(new Option("Todas as escolas", ""));
+        escolas.forEach(function (e) {
+          var texto = e.nome + " - " + e.codigo;
+          lista.add(new Option(texto, texto));
+        });
+      });
+    });
+  </script>
+</body>
+</html>
